@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f1f3f8">
+<title>My LLM</title>
+<style>
+:root{--bg:#f1f3f8;--panel:#fff;--ink:#1b1f2e;--mute:#6b7287;--line:#dde1ec;--me:#3d4fd1;--meink:#fff;--bot:#fff;--code:#e9ecf5}
+@media(prefers-color-scheme:dark){:root{--bg:#12141c;--panel:#1a1d28;--ink:#e8eaf3;--mute:#8d94ab;--line:#2a2e3d;--me:#5a6cf0;--bot:#1f2332;--code:#10121a}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
+header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--line)}
+header b{font-size:17px}
+header div{display:flex;gap:8px}
+button{font:inherit;border:0;border-radius:10px;padding:8px 12px;background:var(--code);color:var(--ink);cursor:pointer}
+button.pri{background:var(--me);color:var(--meink)}
+button:disabled{opacity:.5}
+#log{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.m{max-width:88%;padding:10px 13px;border-radius:16px;overflow-wrap:anywhere;white-space:pre-wrap}
+.u{align-self:flex-end;background:var(--me);color:var(--meink);border-bottom-right-radius:5px}
+.a{align-self:flex-start;background:var(--bot);border:1px solid var(--line);border-bottom-left-radius:5px}
+.a.wait{color:var(--mute);font-style:italic}
+.m pre{background:var(--code);border-radius:8px;padding:8px 10px;margin:6px 0;overflow-x:auto;white-space:pre;font-size:13.5px}
+.m code{background:var(--code);border-radius:5px;padding:1px 5px;font-size:.92em}
+.m pre code{background:none;padding:0}
+details{color:var(--mute);font-size:14px;margin-bottom:6px;white-space:pre-wrap}
+.empty{margin:auto;text-align:center;color:var(--mute);max-width:260px}
+form{display:flex;gap:8px;align-items:flex-end;padding:10px 12px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));background:var(--panel);border-top:1px solid var(--line)}
+textarea{flex:1;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:10px 12px;resize:none;max-height:140px;outline:none}
+textarea:focus,input:focus{border-color:var(--me)}
+dialog{border:0;border-radius:16px;padding:18px;width:min(92vw,420px);background:var(--panel);color:var(--ink)}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+label{display:block;font-size:14px;color:var(--mute);margin:12px 0 4px}
+input,dialog textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 11px}
+.row{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.hint{font-size:13px;color:var(--mute);margin-top:10px}
+</style>
+</head>
+<body>
+<header>
+  <b>My LLM</b>
+  <div><button id="newBtn">New chat</button><button id="setBtn">Settings</button></div>
+</header>
+<div id="log"></div>
+<form id="f">
+  <textarea id="inp" rows="1" placeholder="Message"></textarea>
+  <button class="pri" id="go" type="submit">Send</button>
+</form>
+
+<dialog id="dlg">
+  <b>Settings</b>
+  <label for="eid">Endpoint ID</label>
+  <input id="eid" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="e.g. 8694fqpbr6b">
+  <label for="key">RunPod API key</label>
+  <input id="key" type="password" autocomplete="off" placeholder="rpa_...">
+  <label for="sys">System prompt (optional)</label>
+  <textarea id="sys" rows="4" placeholder="You are my personal assistant..."></textarea>
+  <div class="hint">Saved only in this browser. Nothing is sent anywhere except RunPod.</div>
+  <div class="row"><button id="cancel">Cancel</button><button class="pri" id="save">Save</button></div>
+</dialog>
+
+<script>
+const $=id=>document.getElementById(id);
+const log=$('log'),inp=$('inp'),go=$('go'),dlg=$('dlg');
+let cfg={id:'',key:'',sys:''},msgs=[],busy=false,ctl=null,jobId=null;
+try{cfg=Object.assign(cfg,JSON.parse(localStorage.getItem('cfg')||'{}'));msgs=JSON.parse(localStorage.getItem('msgs')||'[]')}catch(e){}
+const persist=()=>{try{localStorage.setItem('msgs',JSON.stringify(msgs));localStorage.setItem('cfg',JSON.stringify(cfg))}catch(e){}};
+
+function fmt(t,el){
+  t.split('```').forEach((part,i)=>{
+    if(i%2){const nl=part.indexOf('\n');const pre=document.createElement('pre'),c=document.createElement('code');c.textContent=(nl>-1&&nl<20?part.slice(nl+1):part).replace(/\n$/,'');pre.appendChild(c);el.appendChild(pre)}
+    else{const s=document.createElement('span');s.innerHTML=part.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/`([^`\n]+)`/g,'<code>$1</code>').replace(/\*\*([^*\n]+)\*\*/g,'<b>$1</b>');el.appendChild(s)}
+  });
+}
+function bubble(role,text,wait){
+  const d=document.createElement('div');d.className='m '+(role==='user'?'u':'a')+(wait?' wait':'');
+  if(role==='user'||wait){d.textContent=text}
+  else{
+    const m=text.match(/<think>([\s\S]*?)(<\/think>|$)/);
+    if(m){const dt=document.createElement('details'),s=document.createElement('summary');s.textContent='Thinking';dt.appendChild(s);dt.appendChild(document.createTextNode(m[1].trim()));d.appendChild(dt);text=text.replace(m[0],'').trim()}
+    fmt(text,d);
+  }
+  log.appendChild(d);log.scrollTop=log.scrollHeight;return d;
+}
+function render(){
+  log.innerHTML='';
+  if(!msgs.length){log.innerHTML='<div class="empty">Ask anything. The first message after idle can take a few minutes while the GPU starts.</div>';return}
+  msgs.forEach(m=>bubble(m.role,m.content));
+}
+function pick(o){
+  if(o==null)return '';
+  if(typeof o==='string')return o;
+  if(Array.isArray(o))return o.map(pick).filter(Boolean).join('\n');
+  const c=o.choices&&o.choices[0];
+  if(c){const v=(c.message&&c.message.content)||c.text||(c.delta&&c.delta.content);if(v)return v}
+  for(const k of ['message','response','content','text','output','generated_text']){
+    if(o[k]!=null){const v=pick(o[k]);if(v)return v}
+  }
+  return JSON.stringify(o,null,2);
+}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function ui(){go.textContent=busy?'Stop':'Send';go.type=busy?'button':'submit'}
+
+async function send(){
+  const t=inp.value.trim();if(!t||busy)return;
+  if(!cfg.id||!cfg.key){dlg.showModal();return}
+  inp.value='';grow();msgs.push({role:'user',content:t});persist();render();
+  busy=true;ui();ctl=new AbortController();
+  const el=bubble('assistant','Sending…',true);
+  const base='https://api.runpod.ai/v2/'+cfg.id.trim();
+  const h={'Authorization':'Bearer '+cfg.key.trim(),'Content-Type':'application/json'};
+  const payload=(cfg.sys?[{role:'system',content:cfg.sys}]:[]).concat(msgs);
+  try{
+    const r=await fetch(base+'/run',{method:'POST',headers:h,body:JSON.stringify({input:{messages:payload}}),signal:ctl.signal});
+    if(!r.ok)throw new Error('RunPod returned '+r.status+'. Check the endpoint ID and API key in Settings.');
+    jobId=(await r.json()).id;
+    let d;
+    for(;;){
+      await sleep(2000);
+      const s=await fetch(base+'/status/'+jobId,{headers:h,signal:ctl.signal});
+      d=await s.json();
+      if(d.status==='COMPLETED'||d.status==='FAILED'||d.status==='CANCELLED'||d.status==='TIMED_OUT')break;
+      el.textContent=d.status==='IN_QUEUE'?'Waiting for a GPU worker. A cold start can take a few minutes…':'Thinking…';
+    }
+    if(d.status!=='COMPLETED')throw new Error('Job '+d.status.toLowerCase()+(d.error?': '+d.error:''));
+    msgs.push({role:'assistant',content:pick(d.output).trim()||'(empty reply)'});
+  }catch(e){
+    if(e.name==='AbortError'){msgs.push({role:'assistant',content:'(stopped)'})}
+    else msgs.push({role:'assistant',content:'Error: '+e.message+(e instanceof TypeError?' (network or CORS block; see notes)':'')});
+  }
+  busy=false;jobId=null;ui();persist();render();
+}
+async function stop(){
+  if(ctl)ctl.abort();
+  if(jobId)try{await fetch('https://api.runpod.ai/v2/'+cfg.id.trim()+'/cancel/'+jobId,{method:'POST',headers:{'Authorization':'Bearer '+cfg.key.trim()}})}catch(e){}
+}
+function grow(){inp.style.height='auto';inp.style.height=Math.min(inp.scrollHeight,140)+'px'}
+inp.addEventListener('input',grow);
+$('f').addEventListener('submit',e=>{e.preventDefault();send()});
+go.addEventListener('click',()=>{if(busy)stop()});
+$('newBtn').onclick=()=>{if(busy)return;msgs=[];persist();render()};
+$('setBtn').onclick=()=>{$('eid').value=cfg.id;$('key').value=cfg.key;$('sys').value=cfg.sys;dlg.showModal()};
+$('cancel').onclick=()=>dlg.close();
+$('save').onclick=()=>{cfg={id:$('eid').value.trim(),key:$('key').value.trim(),sys:$('sys').value.trim()};persist();dlg.close()};
+render();ui();
+</script>
+</body>
+</html>
