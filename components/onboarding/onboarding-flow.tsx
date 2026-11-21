@@ -30,21 +30,57 @@ export function OnboardingFlow() {
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
+  const [hydratedUid, setHydratedUid] = useState("");
+  const userUid = auth?.currentUser?.uid ?? "";
+  const draftStorageKey = userUid ? `creatorstore:onboarding:draft:${userUid}` : "";
+  const hydrated = Boolean(userUid && hydratedUid === userUid);
 
   useEffect(() => {
+    let cancelled = false;
     const user = auth?.currentUser;
-    if (user?.displayName) setDraft((v) => ({ ...v, displayName: v.displayName || user.displayName || "" }));
-    try {
-      const value = localStorage.getItem("creatorstore:onboarding:draft");
-      if (value) setDraft((v) => ({ ...v, ...(JSON.parse(value) as Partial<OnboardingDraft>) }));
-    } catch {}
-    setHydrated(true);
-  }, []);
+    setHydratedUid("");
+    if (!user) {
+      router.replace("/login");
+      return () => { cancelled = true; };
+    }
+
+    async function prepareAccountDraft() {
+      try {
+        const repository = getCreatorRepository();
+        const [account, profile] = await Promise.all([
+          repository.getAccount(user.uid),
+          repository.getForUser(user.uid),
+        ]);
+        if (cancelled || auth?.currentUser?.uid !== user.uid) return;
+        if (account?.onboardingCompleted || profile) {
+          router.replace("/dashboard");
+          return;
+        }
+      } catch (caught) {
+        if (!cancelled) setError(caught instanceof Error ? caught.message : "Could not verify your account.");
+        return;
+      }
+
+      if (cancelled || auth?.currentUser?.uid !== user.uid) return;
+      let savedDraft: Partial<OnboardingDraft> = {};
+      try {
+        const value = localStorage.getItem(`creatorstore:onboarding:draft:${user.uid}`);
+        if (value) savedDraft = JSON.parse(value) as Partial<OnboardingDraft>;
+      } catch {}
+      setDraft({ ...initial, displayName: user.displayName ?? "", ...savedDraft });
+      setStep(0);
+      setHydratedUid(user.uid);
+    }
+
+    void prepareAccountDraft();
+    return () => { cancelled = true; };
+  }, [router]);
 
   useEffect(() => {
-    if (hydrated) localStorage.setItem("creatorstore:onboarding:draft", JSON.stringify(draft));
-  }, [draft, hydrated]);
+    if (hydrated && draftStorageKey) {
+      localStorage.setItem(draftStorageKey, JSON.stringify(draft));
+    }
+  }, [draft, draftStorageKey, hydrated]);
 
   const usernameStatus = useMemo(() => {
     if (!draft.username) return "Choose your store link";
@@ -95,12 +131,14 @@ export function OnboardingFlow() {
         bio: draft.bio.trim(), avatarUrl: draft.avatarUrl, category: draft.category,
         socialLinks: draft.socialLinks, published: true,
       });
-      localStorage.removeItem("creatorstore:onboarding:draft");
+      if (draftStorageKey) localStorage.removeItem(draftStorageKey);
       router.replace("/dashboard");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "We couldn't create your store. Please try again.");
     } finally { setSaving(false); }
   }
+
+  if (!hydrated) return <main className="grid min-h-screen place-items-center bg-[#f7f8f4] text-sm text-[#69756d]">Preparing your store setup…</main>;
 
   return <main className="min-h-screen bg-[#f7f8f4] px-4 py-5 sm:px-8 sm:py-8"><div className="mx-auto max-w-[1040px]">
     <header className="flex items-center justify-between"><Link href="/" className="text-xl font-extrabold tracking-[-.07em] text-[#23382c]">creator<span className="text-[#779783]">store</span><span className="text-[#bd775c]">.</span></Link><span className="rounded-full border border-[#eadfcf] bg-[#faf5ed] px-3 py-1.5 text-[10px] font-semibold text-[#806f5d]">YOUR STORE SETUP</span></header>
