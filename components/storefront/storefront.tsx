@@ -158,7 +158,7 @@ export function Storefront({ username }: { username: string }) {
       <footer className="border-t border-[#e4e9e0] bg-[#f0f3ec] px-5 py-8 text-center sm:px-8">
         <p className="text-xs text-[#849087]">A little corner of the internet, curated by {creator.displayName}.</p>
         <Link href="/" className="mt-3 inline-block text-sm font-black tracking-[-.06em] text-[#385a45]">bubbli.in<span className="text-[#bd775c]">.</span></Link>
-        <p className="mt-2 text-[10px] text-[#9aa49a]">Recommendations are personal. Prices and availability may change at the seller.</p>
+        <p className="mt-2 text-[10px] text-[#9aa49a]">Recommendations are personal. Prices and availability may change at the seller.</p><nav className="mt-4 flex flex-wrap justify-center gap-4 text-[10px] text-[#78877b]"><Link href="/about">About Bubbli.in</Link><Link href="/contact">Contact</Link><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><Link href="/affiliate-disclosure">Affiliate disclosure</Link><a href="mailto:support@bubbli.in">Support</a></nav>
       </footer>
     </main>
   );
