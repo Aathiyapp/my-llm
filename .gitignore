@@ -70,3 +70,6 @@ out/
 
 # dataconnect generated files
 .dataconnect
+
+# Accidental nested local checkout
+creator-studio/
