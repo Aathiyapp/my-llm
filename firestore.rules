@@ -33,7 +33,10 @@ service cloud.firestore {
     }
 
     match /products/{productId} {
-      allow get, list: if isOwner(resource.data.creatorId)
+      allow get: if (signedIn() && !exists(/databases/$(database)/documents/products/$(productId)))
+        || isOwner(resource.data.creatorId)
+        || (resource.data.active == true && creatorIsPublished(resource.data.creatorId));
+      allow list: if isOwner(resource.data.creatorId)
         || (resource.data.active == true && creatorIsPublished(resource.data.creatorId));
       allow create: if signedIn()
         && request.resource.data.creatorId == request.auth.uid;
@@ -43,7 +46,10 @@ service cloud.firestore {
     }
 
     match /collections/{collectionId} {
-      allow get, list: if isOwner(resource.data.creatorId)
+      allow get: if (signedIn() && !exists(/databases/$(database)/documents/collections/$(collectionId)))
+        || isOwner(resource.data.creatorId)
+        || creatorIsPublished(resource.data.creatorId);
+      allow list: if isOwner(resource.data.creatorId)
         || creatorIsPublished(resource.data.creatorId);
       allow create: if signedIn()
         && request.resource.data.creatorId == request.auth.uid;
