@@ -2,18 +2,18 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { getSafeRedirectUrl } from "@/lib/services/url";
 
 export function ProductRedirect({ productId }: { productId: string }) {
-  const searchParams = useSearchParams();
-  const username = searchParams.get("u")?.trim();
+  const [username, setUsername] = useState<string | null>(null);
   const returnTo = username ? `/${encodeURIComponent(username)}` : "/";
   const [message, setMessage] = useState("Taking you to the seller…");
 
   useEffect(() => {
+    const creatorName = new URLSearchParams(window.location.search).get("u")?.trim() || null;
+    setUsername(creatorName);
     if (!db) { setMessage("Store data is unavailable."); return; }
     const returnKey = `creatorstore:return:${productId}`;
     // When the visitor returns from the seller app/site, do not launch the same
