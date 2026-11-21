@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "CreatorStore — Your recommendations, together",
+  title: "Bubbli.in — Your recommendations, together",
   description: "Create your personal product storefront and share everything you recommend from one link.",
 };
 
