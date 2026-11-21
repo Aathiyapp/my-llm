@@ -57,7 +57,7 @@ export function Storefront({ username }: { username: string }) {
   async function share() {
     const url = `${window.location.origin}/${username}`;
     try {
-      const result = await shareLink(url, creator?.displayName ?? "CreatorStore", creator?.bio);
+      const result = await shareLink(url, creator?.displayName ?? "Bubbli.in", creator?.bio);
       setNotice(result === "copied" ? "Store link copied." : "Store shared.");
     } catch {
       try { await copyLink(url); setNotice("Store link copied."); }
@@ -87,7 +87,7 @@ export function Storefront({ username }: { username: string }) {
       <section className="max-w-md">
         <p className="eyebrow">{loadFailed ? "Unable to load store" : "Store not found"}</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight">{loadFailed ? "We couldn’t load this store." : "This little corner isn’t ready yet."}</h1>
-        <p className="mt-3 text-sm leading-6 text-[#7d8980]">{loadFailed ? "Please refresh and try again." : "Check the link or create your own CreatorStore."}</p>
+        <p className="mt-3 text-sm leading-6 text-[#7d8980]">{loadFailed ? "Please refresh and try again." : "Check the link or create your own Bubbli.in."}</p>
         {loadFailed ? <button onClick={() => window.location.reload()} className="mt-6 rounded-full bg-[#244b3b] px-5 py-3 text-sm font-semibold text-white">Try again</button> : <Link href="/onboarding" className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#244b3b] px-5 py-3 text-sm font-semibold text-white">Create your store <ArrowRight size={15} /></Link>}
       </section>
     </main>
@@ -100,31 +100,18 @@ export function Storefront({ username }: { username: string }) {
         <button onClick={() => void share()} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[#dfe6dc] bg-white/80 px-4 text-xs font-semibold text-[#405b49] shadow-sm transition hover:-translate-y-0.5 hover:bg-white"><Share2 size={14} /> Share this store</button>
       </header>
 
-      <section className="relative mx-auto max-w-7xl px-5 pb-14 pt-5 sm:px-8 sm:pb-20 lg:px-12 lg:pt-10">
-        <div className="absolute -right-24 top-0 size-80 rounded-full bg-[#e7eee4] blur-3xl" />
-        <div className="absolute -left-24 bottom-0 size-64 rounded-full bg-[#f0e9dc] blur-3xl" />
-        <div className="relative grid items-center gap-10 overflow-hidden rounded-[2rem] bg-[#203f32] px-7 py-10 text-white shadow-2xl shadow-[#244b3b]/10 sm:px-12 sm:py-14 lg:grid-cols-[1.2fr_.8fr] lg:px-16 lg:py-16">
-          <div className="absolute -right-20 -top-32 size-96 rounded-full border border-white/10" />
-          <div className="absolute -right-4 -top-16 size-72 rounded-full border border-white/10" />
-          <div className="relative z-10">
-            <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.2em] text-[#c8d9c9]"><Sparkles size={12} /> A considered collection</p>
-            <h1 className="mt-6 max-w-2xl text-4xl font-semibold leading-[1.08] tracking-[-.045em] sm:text-5xl lg:text-6xl">{creator.displayName}<span className="text-[#b8cdb7]">’s picks.</span></h1>
-            <p className="mt-5 max-w-xl text-sm leading-7 text-[#d1ded2] sm:text-base">{creator.bio || "A handpicked collection of things worth discovering."}</p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <a href="#all-picks" className="inline-flex min-h-12 items-center gap-2 rounded-full bg-[#e7eee2] px-6 text-sm font-bold text-[#244b3b] transition hover:-translate-y-0.5 hover:bg-white">Explore the picks <ArrowRight size={16} /></a>
-              <span className="text-xs text-[#c0d1c2]">{products.length} {products.length === 1 ? "recommendation" : "recommendations"} to explore</span>
-            </div>
+      <section className="mx-auto max-w-3xl px-4 pb-10 pt-5 text-center sm:px-8 sm:pb-14">
+        <div className="mx-auto flex max-w-xl flex-col items-center rounded-[2rem] bg-[#d8bd68] px-6 py-9 text-[#241d12] shadow-sm sm:px-10 sm:py-12">
+          <div className="rounded-full bg-white/75 p-1.5 shadow-md"><InitialAvatar creator={creator} /></div>
+          <p className="mt-5 text-3xl font-black tracking-tight sm:text-4xl">{creator.displayName}</p>
+          <p className="mt-2 text-xs font-semibold uppercase tracking-[.16em] text-[#66552a]">@{creator.username} · {creator.category}</p>
+          <p className="mt-5 max-w-md whitespace-pre-line font-serif text-lg leading-8 sm:text-xl">{creator.bio || "My favourite finds, all in one place."}</p>
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
+            {Object.entries(creator.socialLinks).filter(([, value]) => value && validateHttpUrl(value)).map(([key, value]) => (
+              <a key={key} href={value} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center rounded-full border border-[#55451e]/20 bg-white/70 px-4 text-xs font-semibold capitalize text-[#42351b] transition hover:bg-white">{key}</a>
+            ))}
           </div>
-          <div className="relative z-10 flex flex-col items-center justify-center text-center lg:py-5">
-            <div className="rounded-full bg-white/10 p-3 ring-1 ring-white/20"><InitialAvatar creator={creator} /></div>
-            <p className="mt-5 text-lg font-semibold">{creator.displayName}</p>
-            <p className="mt-1 text-xs text-[#b9cbbd]">@{creator.username} <span className="mx-1.5 text-white/30">·</span> {creator.category}</p>
-            <div className="mt-5 flex flex-wrap justify-center gap-2">
-              {Object.entries(creator.socialLinks).filter(([, value]) => value && validateHttpUrl(value)).map(([key, value]) => (
-                <a key={key} href={value} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-2 text-[10px] font-semibold capitalize text-[#e1ebe1] transition hover:bg-white/20"><Link2 size={11} /> {key}</a>
-              ))}
-            </div>
-          </div>
+          <button onClick={() => void share()} className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full bg-[#211f18] px-5 text-sm font-semibold text-white"><Share2 size={15} /> Share this page</button>
         </div>
         {notice && <p role="status" className="mt-3 text-center text-xs font-medium text-[#53745b]">{notice}</p>}
       </section>
@@ -135,7 +122,7 @@ export function Storefront({ username }: { username: string }) {
             <div><p className="eyebrow">The shortlist</p><h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Worth a closer look.</h2><p className="mt-2 text-sm text-[#829087]">The things I’d put at the top of your list.</p></div>
             <span className="hidden rounded-full bg-[#e9eee5] px-3 py-1.5 text-[10px] font-bold text-[#58715d] sm:inline-flex">{featured.length} featured</span>
           </div>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{featured.map((product) => <ProductCard key={product.id} product={product} username={username} />)}</div>
+          <div className="flex snap-x gap-4 overflow-x-auto pb-3 sm:grid sm:grid-cols-2 sm:overflow-visible lg:grid-cols-3">{featured.map((product) => <ProductCard key={product.id} product={product} username={username} />)}</div>
         </section>
       )}
 
@@ -164,12 +151,12 @@ export function Storefront({ username }: { username: string }) {
           <div><p className="eyebrow">Good things, collected</p><h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Browse all picks.</h2><p className="mt-2 text-sm text-[#829087]">Every recommendation, in one place.</p></div>
           <span className="text-xs font-medium text-[#849087]">{allProducts.length} items</span>
         </div>
-        {allProducts.length > 0 ? <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{allProducts.map((product) => <ProductCard key={product.id} product={product} username={username} />)}</div> : <div className="rounded-3xl border border-dashed border-[#dce4d9] bg-white/70 px-6 py-14 text-center"><Compass className="mx-auto text-[#8ba18d]" size={28} /><h3 className="mt-3 font-semibold">The collection is taking shape.</h3><p className="mt-2 text-sm text-[#849087]">Check back soon for new recommendations.</p></div>}
+        {allProducts.length > 0 ? <div className="flex snap-x gap-4 overflow-x-auto pb-3 sm:grid sm:grid-cols-2 sm:overflow-visible lg:grid-cols-3">{allProducts.map((product) => <ProductCard key={product.id} product={product} username={username} />)}</div> : <div className="rounded-3xl border border-dashed border-[#dce4d9] bg-white/70 px-6 py-14 text-center"><Compass className="mx-auto text-[#8ba18d]" size={28} /><h3 className="mt-3 font-semibold">The collection is taking shape.</h3><p className="mt-2 text-sm text-[#849087]">Check back soon for new recommendations.</p></div>}
       </section>
 
       <footer className="border-t border-[#e4e9e0] bg-[#f0f3ec] px-5 py-8 text-center sm:px-8">
         <p className="text-xs text-[#849087]">A little corner of the internet, curated by {creator.displayName}.</p>
-        <Link href="/" className="mt-3 inline-block text-sm font-black tracking-[-.06em] text-[#385a45]">creatorstore<span className="text-[#bd775c]">.</span></Link>
+        <Link href="/" className="mt-3 inline-block text-sm font-black tracking-[-.06em] text-[#385a45]">bubbli.in<span className="text-[#bd775c]">.</span></Link>
         <p className="mt-2 text-[10px] text-[#9aa49a]">Recommendations are personal. Prices and availability may change at the seller.</p>
       </footer>
     </main>
@@ -188,7 +175,7 @@ function ProductCard({ product, username }: { product: StoreProduct; username: s
     }
   }
   return (
-    <article className="group overflow-hidden rounded-[1.6rem] border border-[#e5e9e1] bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-[#233f30]/10">
+    <article className="group min-w-[82vw] snap-start overflow-hidden rounded-[1.6rem] sm:min-w-0 border border-[#e5e9e1] bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-[#233f30]/10">
       <Link href={`/go/${product.id}?u=${encodeURIComponent(username)}`} className="relative block aspect-[1.2/1] overflow-hidden bg-[#eff1eb] bg-cover bg-center" style={{ backgroundImage: `url(${product.imageUrl})` }} aria-label={`View ${product.name}`}>
         {product.featured && <span className="absolute left-4 top-4 rounded-full border border-white/60 bg-white/90 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[.14em] text-[#49644e] shadow-sm"><Sparkles size={10} className="mr-1 inline" /> Creator’s pick</span>}
         <span className="absolute bottom-4 right-4 grid size-10 translate-y-2 place-items-center rounded-full bg-white text-[#315c4c] opacity-0 shadow-lg transition group-hover:translate-y-0 group-hover:opacity-100"><ArrowUpRight size={18} /></span>
@@ -202,7 +189,7 @@ function ProductCard({ product, username }: { product: StoreProduct; username: s
           <Link href={`/go/${product.id}?u=${encodeURIComponent(username)}`} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[#294f3e] px-4 text-xs font-bold text-white transition hover:bg-[#1d3d30]">View recommendation <ArrowUpRight size={15} /></Link>
           <button aria-label={`Share ${product.name}`} onClick={() => void share()} className="grid size-12 shrink-0 place-items-center rounded-full border border-[#e2e8df] text-[#607a66] transition hover:bg-[#f1f5ef]"><Share2 size={15} /></button>
         </div>
-        <a href={whatsappShareUrl(`${typeof window !== "undefined" ? window.location.origin : "https://creatorstore.com"}/go/${product.id}?u=${encodeURIComponent(username)}`, product.name)} target="_blank" rel="noreferrer" className="mt-3 flex items-center justify-center gap-1.5 text-[11px] font-semibold text-[#68866e] hover:text-[#315c4c]">Send to a friend on WhatsApp <ArrowRight size={12} /></a>
+        <a href={whatsappShareUrl(`${typeof window !== "undefined" ? window.location.origin : "https://bubbli.in"}/go/${product.id}?u=${encodeURIComponent(username)}`, `Hi, I’m interested in ${product.name}. Could you share more details?`)} target="_blank" rel="noreferrer" className="mt-3 flex items-center justify-center gap-1.5 text-[11px] font-semibold text-[#68866e] hover:text-[#315c4c]">Send to a friend on WhatsApp <ArrowRight size={12} /></a>
         {shared && <p role="status" className="mt-2 flex items-center justify-center gap-1 text-[10px] text-[#5d7e65]"><Check size={11} /> Product link copied</p>}
       </div>
     </article>
