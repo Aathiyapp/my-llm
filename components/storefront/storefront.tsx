@@ -21,13 +21,21 @@ export function Storefront({ username }: { username: string }) {
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [collections, setCollections] = useState<StoreCollection[]>([]);
   const [notice, setNotice] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setLoadFailed(false);
+    setCreator(null);
     void (async () => {
       try {
         const profile = await getCreatorRepository().get(username);
-        if (!profile) { if (!cancelled) setCreator(null); return; }
+        if (!profile) {
+          if (!cancelled) setCreator(null);
+          return;
+        }
         const [p, cs] = await Promise.all([
           getProductRepository().listPublic(profile.id),
           getCollectionRepository().listPublic(profile.id),
@@ -35,7 +43,9 @@ export function Storefront({ username }: { username: string }) {
         if (!cancelled) { setCreator(profile); setProducts(p); setCollections(cs); }
       } catch (error) {
         console.error("Failed to load public storefront:", error);
-        if (!cancelled) setCreator(null);
+        if (!cancelled) setLoadFailed(true);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
@@ -55,13 +65,30 @@ export function Storefront({ username }: { username: string }) {
     }
   }
 
+  if (loading) return (
+    <main aria-busy="true" className="min-h-screen bg-[#f7f8f3] px-5">
+      <div className="mx-auto max-w-7xl animate-pulse py-5 sm:px-8 lg:px-12">
+        <div className="flex items-center justify-between">
+          <div className="h-6 w-36 rounded bg-[#e5eae2]" />
+          <div className="h-10 w-32 rounded-full bg-[#e5eae2]" />
+        </div>
+        <div className="mt-10 grid min-h-[390px] items-center gap-10 rounded-[2rem] bg-[#e7ece4] p-8 sm:p-12 lg:grid-cols-[1.2fr_.8fr]">
+          <div><div className="h-6 w-44 rounded-full bg-[#d8e1d6]" /><div className="mt-7 h-12 max-w-lg rounded-xl bg-[#d8e1d6]" /><div className="mt-3 h-12 max-w-sm rounded-xl bg-[#d8e1d6]" /><div className="mt-6 h-4 max-w-md rounded bg-[#d8e1d6]" /><div className="mt-3 h-4 max-w-xs rounded bg-[#d8e1d6]" /><div className="mt-8 h-12 w-40 rounded-full bg-[#d8e1d6]" /></div>
+          <div className="mx-auto size-36 rounded-full bg-[#d8e1d6]" />
+        </div>
+        <div className="mt-14 h-7 w-56 rounded bg-[#e5eae2]" />
+        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{[1,2,3].map((item) => <div key={item} className="overflow-hidden rounded-3xl bg-white p-4"><div className="aspect-[1.2/1] rounded-2xl bg-[#e9ede6]" /><div className="mt-4 h-4 w-2/3 rounded bg-[#e9ede6]" /><div className="mt-3 h-4 w-1/2 rounded bg-[#e9ede6]" /></div>)}</div>
+      </div>
+    </main>
+  );
+
   if (!creator) return (
     <main className="grid min-h-screen place-items-center bg-[#f7f8f3] px-6 text-center">
       <section className="max-w-md">
-        <p className="eyebrow">Store not found</p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight">This little corner isn’t ready yet.</h1>
-        <p className="mt-3 text-sm leading-6 text-[#7d8980]">Check the link or create your own CreatorStore.</p>
-        <Link href="/onboarding" className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#244b3b] px-5 py-3 text-sm font-semibold text-white">Create your store <ArrowRight size={15} /></Link>
+        <p className="eyebrow">{loadFailed ? "Unable to load store" : "Store not found"}</p>
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight">{loadFailed ? "We couldn’t load this store." : "This little corner isn’t ready yet."}</h1>
+        <p className="mt-3 text-sm leading-6 text-[#7d8980]">{loadFailed ? "Please refresh and try again." : "Check the link or create your own CreatorStore."}</p>
+        {loadFailed ? <button onClick={() => window.location.reload()} className="mt-6 rounded-full bg-[#244b3b] px-5 py-3 text-sm font-semibold text-white">Try again</button> : <Link href="/onboarding" className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#244b3b] px-5 py-3 text-sm font-semibold text-white">Create your store <ArrowRight size={15} /></Link>}
       </section>
     </main>
   );
