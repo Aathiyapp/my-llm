@@ -21,7 +21,7 @@ export default function Home() {
   return <main className="overflow-hidden">
     <div className="mx-auto max-w-[1440px] px-5 sm:px-8 lg:px-14">
       <header className="flex h-[76px] items-center justify-between border-b border-[#e9ece5]">
-        <Link href="/" className="text-[1.35rem] font-extrabold tracking-[-.07em] text-[#23382c]">creator<span className="text-[#779783]">store</span><span className="ml-1 text-[#bd775c]">.</span></Link>
+        <Link href="/" className="text-[1.35rem] font-extrabold tracking-[-.07em] text-[#23382c]">bubbli<span className="text-[#779783]">.in</span><span className="ml-1 text-[#bd775c]">.</span></Link>
         <nav className="hidden items-center gap-9 text-[.82rem] font-medium text-[#657168] md:flex"><a href="#how-it-works" className="hover:text-[#263c30]">How it works</a><a href="#discover" className="hover:text-[#263c30]">Discover</a><a href="#about" className="hover:text-[#263c30]">For creators</a></nav>
         <div className="flex items-center gap-2 sm:gap-4"><Link href="/login" className="px-2 py-2 text-sm font-semibold text-[#48564d] sm:px-3">Log in</Link><Button href="/onboarding" className="min-h-10 px-4 text-xs sm:min-h-11 sm:px-5 sm:text-sm">Create your store <ArrowRight size={15}/></Button></div>
       </header>
@@ -54,6 +54,6 @@ export default function Home() {
 
     <section id="about" className="mx-5 mb-16 overflow-hidden rounded-[2rem] bg-[#2d4939] px-6 py-14 text-center text-white sm:mx-8 sm:mb-24 sm:py-20"><p className="text-xs font-semibold uppercase tracking-[.18em] text-[#b7c9b8]">Your corner. Your curation.</p><h2 className="mx-auto mt-4 max-w-2xl font-serif text-4xl italic leading-tight sm:text-5xl">The things you love deserve a home.</h2><p className="mx-auto mt-4 max-w-md text-sm leading-6 text-[#d0dbd0]">Start gathering your recommendations into a storefront that feels like you.</p><Button href="/onboarding" variant="secondary" className="mt-7 border-white/30 bg-white text-[#2d4939]">Create your store for free <ArrowRight size={15}/></Button></section>
 
-    <footer className="mx-auto flex max-w-[1440px] flex-col items-center justify-between gap-3 border-t border-[#e9ece5] px-5 py-7 text-xs text-[#869087] sm:flex-row sm:px-8 lg:px-14"><Link href="/" className="font-bold tracking-[-.05em] text-[#35483a]">creator<span className="text-[#779783]">store</span>.</Link><span>Made for the things worth sharing.</span><span>© 2026 Bubbli.in</span></footer>
+    <footer className="mx-auto flex max-w-[1440px] flex-col items-center justify-between gap-3 border-t border-[#e9ece5] px-5 py-7 text-xs text-[#869087] sm:flex-row sm:px-8 lg:px-14"><Link href="/" className="font-bold tracking-[-.05em] text-[#35483a]">bubbli.in</Link><span>Made for the things worth sharing.</span><span>© 2026 Bubbli.in</span></footer>
   </main>;
 }
