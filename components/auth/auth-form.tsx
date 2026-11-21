@@ -13,10 +13,13 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const [busy, setBusy] = useState(false);
   const isSignup = mode === "signup";
 
-  async function continueToWorkspace(uid: string, forceOnboarding = false) {
-    if (forceOnboarding) { router.replace("/onboarding"); return; }
-    const account = await getCreatorRepository().getAccount(uid);
-    router.replace(account?.onboardingCompleted ? "/dashboard" : "/onboarding");
+  async function continueToWorkspace(uid: string) {
+    const repository = getCreatorRepository();
+    const [account, profile] = await Promise.all([
+      repository.getAccount(uid),
+      repository.getForUser(uid),
+    ]);
+    router.replace(account?.onboardingCompleted || profile ? "/dashboard" : "/onboarding");
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -27,7 +30,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
     try {
       if (isSignup) {
         const credential = await signUpWithEmail(String(data.get("email")), String(data.get("password")), String(data.get("name")));
-        await continueToWorkspace(credential.user.uid, true);
+        await continueToWorkspace(credential.user.uid);
       } else {
         const credential = await signInWithEmail(String(data.get("email")), String(data.get("password")));
         await continueToWorkspace(credential.user.uid);
