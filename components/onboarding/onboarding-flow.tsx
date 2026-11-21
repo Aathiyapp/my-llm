@@ -43,15 +43,17 @@ export function OnboardingFlow() {
       router.replace("/login");
       return () => { cancelled = true; };
     }
+    const uid = user.uid;
+    const displayName = user.displayName ?? "";
 
     async function prepareAccountDraft() {
       try {
         const repository = getCreatorRepository();
         const [account, profile] = await Promise.all([
-          repository.getAccount(user.uid),
-          repository.getForUser(user.uid),
+          repository.getAccount(uid),
+          repository.getForUser(uid),
         ]);
-        if (cancelled || auth?.currentUser?.uid !== user.uid) return;
+        if (cancelled || auth?.currentUser?.uid !== uid) return;
         if (account?.onboardingCompleted || profile) {
           router.replace("/dashboard");
           return;
@@ -59,21 +61,21 @@ export function OnboardingFlow() {
       } catch (caught) {
         if (!cancelled) {
           setError(caught instanceof Error ? caught.message : "Could not verify your account.");
-          setDraft({ ...initial, displayName: user.displayName ?? "" });
-          setHydratedUid(user.uid);
+          setDraft({ ...initial, displayName: displayName });
+          setHydratedUid(uid);
         }
         return;
       }
 
-      if (cancelled || auth?.currentUser?.uid !== user.uid) return;
+      if (cancelled || auth?.currentUser?.uid !== uid) return;
       let savedDraft: Partial<OnboardingDraft> = {};
       try {
-        const value = localStorage.getItem(`creatorstore:onboarding:draft:${user.uid}`);
+        const value = localStorage.getItem(`creatorstore:onboarding:draft:${uid}`);
         if (value) savedDraft = JSON.parse(value) as Partial<OnboardingDraft>;
       } catch {}
-      setDraft({ ...initial, displayName: user.displayName ?? "", ...savedDraft });
+      setDraft({ ...initial, displayName: displayName, ...savedDraft });
       setStep(0);
-      setHydratedUid(user.uid);
+      setHydratedUid(uid);
     }
 
     void prepareAccountDraft();
