@@ -59,7 +59,7 @@ export function Storefront({ username }: { username: string }) {
     const url = `${window.location.origin}/${username}`;
     try {
       const result = await shareLink(url, creator?.displayName ?? "Bubbli.in", creator?.bio);
-      setNotice(result === "copied" ? "Store link copied." : "Store shared.");
+      setNotice(result === "copied" ? "Store link copied." : result === "cancelled" ? "Share cancelled." : "Store shared.");
     } catch {
       try { await copyLink(url); setNotice("Store link copied."); }
       catch { setNotice("Sharing isn’t available here."); }
