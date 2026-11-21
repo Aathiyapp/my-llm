@@ -57,7 +57,11 @@ export function OnboardingFlow() {
           return;
         }
       } catch (caught) {
-        if (!cancelled) setError(caught instanceof Error ? caught.message : "Could not verify your account.");
+        if (!cancelled) {
+          setError(caught instanceof Error ? caught.message : "Could not verify your account.");
+          setDraft({ ...initial, displayName: user.displayName ?? "" });
+          setHydratedUid(user.uid);
+        }
         return;
       }
 
