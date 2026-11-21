@@ -98,23 +98,23 @@ export function Storefront({ username }: { username: string }) {
     <main className="min-h-screen overflow-hidden text-[#1e3328]" style={{ background: theme.page }}>
       <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8 lg:px-12">
         <Link href="/" className="text-xl font-black tracking-[-.075em]">creator<span className="text-[#779780]">store</span><span className="text-[#c27b5c]">.</span></Link>
-        <button onClick={() => void share()} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[#dfe6dc] bg-white/80 px-4 text-xs font-semibold text-[#405b49] shadow-sm transition hover:-translate-y-0.5 hover:bg-white"><Share2 size={14} /> Share this store</button>
+        <div className="flex items-center gap-2"><button onClick={async () => { try { await copyLink(`${window.location.origin}/${username}`); setNotice("Copied!"); } catch { setNotice("Could not copy link."); } }} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[#dfe6dc] bg-white/90 px-4 text-xs font-semibold text-[#405b49] shadow-sm transition hover:bg-white"><Link2 size={14} /> Copy link</button><button onClick={() => void share()} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[#dfe6dc] bg-white/80 px-4 text-xs font-semibold text-[#405b49] shadow-sm transition hover:-translate-y-0.5 hover:bg-white"><Share2 size={14} /> Share</button></div>
       </header>
 
-      <section className="mx-auto max-w-3xl px-4 pb-10 pt-5 text-center sm:px-8 sm:pb-14">
-        <div className="mx-auto flex max-w-xl flex-col items-center rounded-[2rem] px-6 py-9 shadow-sm sm:px-10 sm:py-12" style={{ background: theme.background, color: theme.text }}>
-          <div className="rounded-full bg-white/75 p-1.5 shadow-md"><InitialAvatar creator={creator} /></div>
-          <p className="mt-5 text-3xl font-black tracking-tight sm:text-4xl">{creator.displayName}</p>
-          <p className="mt-2 text-xs font-semibold uppercase tracking-[.16em] text-[#66552a]">@{creator.username} · {creator.category}</p>
-          <p className="mt-5 max-w-md whitespace-pre-line font-serif text-lg leading-8 sm:text-xl">{creator.bio || "My favourite finds, all in one place."}</p>
-          <div className="mt-6 flex flex-wrap justify-center gap-2">
-            {Object.entries(creator.socialLinks).filter(([, value]) => value && validateHttpUrl(value)).map(([key, value]) => (
-              <a key={key} href={value} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center rounded-full border border-[#55451e]/20 bg-white/70 px-4 text-xs font-semibold capitalize text-[#42351b] transition hover:bg-white">{key}</a>
-            ))}
+      <section className="mx-auto max-w-7xl px-4 pb-8 pt-2 sm:px-8 sm:pb-12">
+        <div className="relative isolate flex min-h-[340px] items-end overflow-hidden rounded-[1.75rem] bg-cover bg-center shadow-lg sm:min-h-[430px] sm:rounded-[2.25rem]" style={{ backgroundColor: theme.background, backgroundImage: creator.avatarUrl ? `url("${creator.avatarUrl}")` : undefined, color: "#fff" }}>
+          <div className="absolute inset-0 -z-10" style={{ background: creator.avatarUrl ? "linear-gradient(180deg,rgba(12,20,15,.12) 0%,rgba(12,20,15,.35) 42%,rgba(12,20,15,.88) 100%)" : `linear-gradient(135deg,${theme.background},#263d30)` }} />
+          <div className="w-full p-6 text-white sm:p-10">
+            <p className="inline-flex rounded-full border border-white/30 bg-black/25 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.16em] text-white/95 backdrop-blur-md">@{creator.username} · {creator.category}</p>
+            <h1 className="mt-3 max-w-3xl text-3xl font-black tracking-tight drop-shadow sm:text-5xl">{creator.displayName}</h1>
+            <p className="mt-3 max-w-2xl whitespace-pre-line text-sm leading-6 text-white/95 drop-shadow sm:text-lg sm:leading-8">{creator.bio || "My favourite finds, all in one place."}</p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              {Object.entries(creator.socialLinks).filter(([, value]) => value && validateHttpUrl(value)).map(([key, value]) => <a key={key} href={value} target="_blank" rel="noreferrer" className="inline-flex min-h-9 items-center rounded-full border border-white/35 bg-black/25 px-4 text-xs font-semibold capitalize text-white backdrop-blur-md hover:bg-black/40">{key}</a>)}
+              <button onClick={() => void share()} className="inline-flex min-h-9 items-center gap-2 rounded-full bg-white px-4 text-xs font-bold text-[#263d30]"><Share2 size={13} /> Share store</button>
+            </div>
           </div>
-          <button onClick={() => void share()} className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full bg-[#211f18] px-5 text-sm font-semibold text-white"><Share2 size={15} /> Share this page</button>
         </div>
-        {notice && <p role="status" className="mt-3 text-center text-xs font-medium text-[#53745b]">{notice}</p>}
+        {notice && <p role="status" className="mt-3 text-center text-xs font-semibold text-[#53745b]" aria-live="polite">{notice}</p>}
       </section>
 
       {featured.length > 0 && (
@@ -123,7 +123,7 @@ export function Storefront({ username }: { username: string }) {
             <div><p className="eyebrow">The shortlist</p><h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Worth a closer look.</h2><p className="mt-2 text-sm text-[#829087]">The things I’d put at the top of your list.</p></div>
             <span className="hidden rounded-full bg-[#e9eee5] px-3 py-1.5 text-[10px] font-bold text-[#58715d] sm:inline-flex">{featured.length} featured</span>
           </div>
-          <div className="flex snap-x gap-4 overflow-x-auto pb-3 sm:grid sm:grid-cols-2 sm:overflow-visible lg:grid-cols-3">{featured.map((product) => <ProductCard key={product.id} product={product} username={username} />)}</div>
+          <div className="product-mosaic grid grid-cols-2 items-start gap-3 sm:gap-5 lg:grid-cols-3">{featured.map((product, index) => <ProductCard key={product.id} product={product} username={username} index={index} />)}</div>
         </section>
       )}
 
@@ -139,7 +139,7 @@ export function Storefront({ username }: { username: string }) {
                     <div><p className="text-[10px] font-bold uppercase tracking-[.18em] text-[#88a08a]">Collection · {items.length} picks</p><h3 className="mt-2 text-xl font-semibold">{collection.title}</h3><p className="mt-2 max-w-md text-sm leading-6 text-[#7d8980]">{collection.description || "A few favourites, gathered in one place."}</p></div>
                     <button aria-label={`Share ${collection.title}`} onClick={async () => { try { await shareLink(`${window.location.origin}/${username}#${collection.id}`, collection.title, collection.description); setNotice("Collection link copied or shared."); } catch { setNotice("Share this collection from your browser menu."); } }} className="grid size-10 shrink-0 place-items-center rounded-full bg-[#f1f5ef] text-[#617b67] transition hover:bg-[#e4ece2]"><Share2 size={15} /></button>
                   </div>
-                  {items.length > 0 ? <div className="mt-5 grid grid-cols-3 gap-2">{items.slice(0, 3).map((product) => <Link key={product.id} href={`/go/${product.id}?u=${encodeURIComponent(username)}`} title={product.name} className="group/item"><div className="aspect-square overflow-hidden rounded-xl bg-[#f0f1eb] bg-cover bg-center transition group-hover/item:scale-[1.02]" style={{ backgroundImage: `url(${product.imageUrl})` }} /><p className="mt-2 truncate text-[11px] font-semibold text-[#43574a]">{product.name}</p></Link>)}</div> : <p className="mt-5 rounded-xl bg-[#f6f7f3] p-4 text-xs text-[#8a948c]">More picks are on their way.</p>}
+                  {items.length > 0 ? <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">{items.slice(0, 4).map((product) => <Link key={product.id} href={`/go/${product.id}?u=${encodeURIComponent(username)}`} title={product.name} className="group/item min-w-0"><div className="aspect-square overflow-hidden rounded-xl bg-[#f0f1eb] bg-cover bg-center transition group-hover/item:scale-[1.02]" style={{ backgroundImage: `url(${product.imageUrl})` }} /><p className="mt-2 truncate text-[11px] font-semibold text-[#43574a]">{product.name}</p></Link>)}</div> : <p className="mt-5 rounded-xl bg-[#f6f7f3] p-4 text-xs text-[#8a948c]">More picks are on their way.</p>}
                 </article>
               );
             })}
@@ -152,7 +152,7 @@ export function Storefront({ username }: { username: string }) {
           <div><p className="eyebrow">Good things, collected</p><h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Browse all picks.</h2><p className="mt-2 text-sm text-[#829087]">Every recommendation, in one place.</p></div>
           <span className="text-xs font-medium text-[#849087]">{allProducts.length} items</span>
         </div>
-        {allProducts.length > 0 ? <div className="flex snap-x gap-4 overflow-x-auto pb-3 sm:grid sm:grid-cols-2 sm:overflow-visible lg:grid-cols-3">{allProducts.map((product) => <ProductCard key={product.id} product={product} username={username} />)}</div> : <div className="rounded-3xl border border-dashed border-[#dce4d9] bg-white/70 px-6 py-14 text-center"><Compass className="mx-auto text-[#8ba18d]" size={28} /><h3 className="mt-3 font-semibold">The collection is taking shape.</h3><p className="mt-2 text-sm text-[#849087]">Check back soon for new recommendations.</p></div>}
+        {allProducts.length > 0 ? <div className="product-mosaic grid grid-cols-2 items-start gap-3 sm:gap-5 lg:grid-cols-3">{allProducts.map((product, index) => <ProductCard key={product.id} product={product} username={username} index={index} />)}</div> : <div className="rounded-3xl border border-dashed border-[#dce4d9] bg-white/70 px-6 py-14 text-center"><Compass className="mx-auto text-[#8ba18d]" size={28} /><h3 className="mt-3 font-semibold">The collection is taking shape.</h3><p className="mt-2 text-sm text-[#849087]">Check back soon for new recommendations.</p></div>}
       </section>
 
       <footer className="border-t border-[#e4e9e0] bg-[#f0f3ec] px-5 py-8 text-center sm:px-8">
@@ -164,7 +164,7 @@ export function Storefront({ username }: { username: string }) {
   );
 }
 
-function ProductCard({ product, username }: { product: StoreProduct; username: string }) {
+function ProductCard({ product, username, index = 0 }: { product: StoreProduct; username: string; index?: number }) {
   const [shared, setShared] = useState(false);
   async function share() {
     const url = `${window.location.origin}/go/${product.id}?u=${encodeURIComponent(username)}`;
@@ -176,18 +176,18 @@ function ProductCard({ product, username }: { product: StoreProduct; username: s
     }
   }
   return (
-    <article className="group min-w-[82vw] snap-start overflow-hidden rounded-[1.6rem] sm:min-w-0 border border-[#e5e9e1] bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-[#233f30]/10">
-      <Link href={`/go/${product.id}?u=${encodeURIComponent(username)}`} className="relative block aspect-[1.2/1] overflow-hidden bg-[#eff1eb] bg-cover bg-center" style={{ backgroundImage: `url(${product.imageUrl})` }} aria-label={`View ${product.name}`}>
+    <article className={`group min-w-0 overflow-hidden rounded-[1.35rem] border border-[#e5e9e1] bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-[#233f30]/10 ${index % 5 === 0 ? "col-span-2 lg:col-span-1" : ""}`}>
+      <Link href={`/go/${product.id}?u=${encodeURIComponent(username)}`} className={`relative block overflow-hidden bg-[#eff1eb] bg-cover bg-center ${index % 5 === 0 ? "aspect-[1.8/1] lg:aspect-[1.2/1]" : "aspect-[1/1] sm:aspect-[1.15/1]"}`} style={{ backgroundImage: `url(${product.imageUrl})` }} aria-label={`View ${product.name}`}>
         {product.featured && <span className="absolute left-4 top-4 rounded-full border border-white/60 bg-white/90 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[.14em] text-[#49644e] shadow-sm"><Sparkles size={10} className="mr-1 inline" /> Creator’s pick</span>}
         <span className="absolute bottom-4 right-4 grid size-10 translate-y-2 place-items-center rounded-full bg-white text-[#315c4c] opacity-0 shadow-lg transition group-hover:translate-y-0 group-hover:opacity-100"><ArrowUpRight size={18} /></span>
       </Link>
-      <div className="p-5">
+      <div className="p-3 sm:p-5">
         <div className="flex items-center justify-between gap-3"><p className="truncate text-[10px] font-bold uppercase tracking-[.16em] text-[#8ba08b]">{product.source || "RECOMMENDED"}</p>{product.price && <p className="shrink-0 text-sm font-bold text-[#315c4c]">{product.price}</p>}</div>
         <h3 className="mt-2 text-lg font-semibold tracking-tight text-[#263b2e]">{product.name}</h3>
         {(product.recommendation || product.description) && <p className="mt-2 line-clamp-3 text-sm leading-6 text-[#7a887e]">{product.recommendation || product.description}</p>}
         {product.reviewUrl && validateHttpUrl(product.reviewUrl) && <a href={product.reviewUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-[#68866e] hover:text-[#315c4c]"><Play size={13} /> Watch my review</a>}
         <div className="mt-5 flex gap-2">
-          <Link href={`/go/${product.id}?u=${encodeURIComponent(username)}`} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[#294f3e] px-4 text-xs font-bold text-white transition hover:bg-[#1d3d30]">View recommendation <ArrowUpRight size={15} /></Link>
+          <Link href={`/go/${product.id}?u=${encodeURIComponent(username)}`} className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full bg-[#294f3e] px-2 text-[10px] font-bold text-white transition hover:bg-[#1d3d30] sm:min-h-12 sm:px-4 sm:text-xs">View recommendation <ArrowUpRight size={15} /></Link>
           <button aria-label={`Share ${product.name}`} onClick={() => void share()} className="grid size-12 shrink-0 place-items-center rounded-full border border-[#e2e8df] text-[#607a66] transition hover:bg-[#f1f5ef]"><Share2 size={15} /></button>
         </div>
         <a href={whatsappShareUrl(`${typeof window !== "undefined" ? window.location.origin : "https://bubbli.in"}/go/${product.id}?u=${encodeURIComponent(username)}`, `Hi, I’m interested in ${product.name}. Could you share more details?`)} target="_blank" rel="noreferrer" className="mt-3 flex items-center justify-center gap-1.5 text-[11px] font-semibold text-[#68866e] hover:text-[#315c4c]">Send to a friend on WhatsApp <ArrowRight size={12} /></a>
