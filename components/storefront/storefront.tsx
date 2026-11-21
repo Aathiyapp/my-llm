@@ -53,6 +53,7 @@ export function Storefront({ username }: { username: string }) {
 
   const featured = useMemo(() => products.filter((product) => product.featured).sort((a, b) => a.order - b.order), [products]);
   const allProducts = useMemo(() => [...products].sort((a, b) => a.order - b.order), [products]);
+  const theme = ({ gold: { background: "#d8bd68", text: "#241d12", page: "#fbf7e9" }, sage: { background: "#cbd9c6", text: "#20372a", page: "#f3f7f0" }, rose: { background: "#e8c7c4", text: "#432a2b", page: "#fff6f5" }, midnight: { background: "#25364b", text: "#ffffff", page: "#edf1f6" } } as const)[creator?.theme ?? "gold"];
 
   async function share() {
     const url = `${window.location.origin}/${username}`;
@@ -94,14 +95,14 @@ export function Storefront({ username }: { username: string }) {
   );
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#f7f8f3] text-[#1e3328]">
+    <main className="min-h-screen overflow-hidden text-[#1e3328]" style={{ background: theme.page }}>
       <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8 lg:px-12">
         <Link href="/" className="text-xl font-black tracking-[-.075em]">creator<span className="text-[#779780]">store</span><span className="text-[#c27b5c]">.</span></Link>
         <button onClick={() => void share()} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[#dfe6dc] bg-white/80 px-4 text-xs font-semibold text-[#405b49] shadow-sm transition hover:-translate-y-0.5 hover:bg-white"><Share2 size={14} /> Share this store</button>
       </header>
 
       <section className="mx-auto max-w-3xl px-4 pb-10 pt-5 text-center sm:px-8 sm:pb-14">
-        <div className="mx-auto flex max-w-xl flex-col items-center rounded-[2rem] bg-[#d8bd68] px-6 py-9 text-[#241d12] shadow-sm sm:px-10 sm:py-12">
+        <div className="mx-auto flex max-w-xl flex-col items-center rounded-[2rem] px-6 py-9 shadow-sm sm:px-10 sm:py-12" style={{ background: theme.background, color: theme.text }}>
           <div className="rounded-full bg-white/75 p-1.5 shadow-md"><InitialAvatar creator={creator} /></div>
           <p className="mt-5 text-3xl font-black tracking-tight sm:text-4xl">{creator.displayName}</p>
           <p className="mt-2 text-xs font-semibold uppercase tracking-[.16em] text-[#66552a]">@{creator.username} · {creator.category}</p>
