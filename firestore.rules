@@ -8,14 +8,27 @@ service cloud.firestore {
       return exists(/databases/$(database)/documents/creatorProfiles/$(uid))
         && get(/databases/$(database)/documents/creatorProfiles/$(uid)).data.published == true;
     }
+    function validOptionalLink(links, key) {
+      return !(key in links) || (links[key] is string && links[key].size() <= 2048);
+    }
+    function validSocialLinks(links) {
+      return links is map
+        && links.keys().hasOnly(["instagram", "youtube", "facebook", "telegram", "website", "whatsapp", "other"])
+        && validOptionalLink(links, "instagram")
+        && validOptionalLink(links, "youtube")
+        && validOptionalLink(links, "facebook")
+        && validOptionalLink(links, "telegram")
+        && validOptionalLink(links, "website")
+        && validOptionalLink(links, "whatsapp")
+        && validOptionalLink(links, "other");
+    }
     function validProfile(data) {
       return data.username is string && data.username.size() >= 3 && data.username.size() <= 30
         && data.displayName is string && data.displayName.size() > 0 && data.displayName.size() <= 60
         && data.bio is string && data.bio.size() <= 180
         && data.photoURL is string && data.photoURL.size() <= 500000
         && data.category is string && data.category.size() <= 60
-        && data.socialLinks is map
-        && data.socialLinks.keys().hasOnly(["instagram", "youtube", "facebook", "telegram", "website", "whatsapp", "other"])
+        && validSocialLinks(data.socialLinks)
         && data.theme in ["ananya", "meera", "sundar", "minimal", "bold", "lifestyle"]
         && data.published is bool;
     }
@@ -74,6 +87,8 @@ service cloud.firestore {
       allow create: if isOwner(uid)
         && request.resource.data.keys().hasOnly(["uid", "username", "displayName", "bio", "photoURL", "category", "socialLinks", "theme", "published", "createdAt", "updatedAt"])
         && request.resource.data.uid == uid
+        && existsAfter(/databases/$(database)/documents/usernames/$(request.resource.data.username))
+        && getAfter(/databases/$(database)/documents/usernames/$(request.resource.data.username)).data.uid == uid
         && validProfile(request.resource.data);
       allow update: if isOwner(uid)
         && request.resource.data.uid == resource.data.uid
@@ -89,11 +104,14 @@ service cloud.firestore {
     }
 
     match /usernames/{username} {
-      allow get: if true;
+      allow get: if signedIn();
       allow create: if signedIn()
         && request.resource.data.keys().hasOnly(["uid", "username", "createdAt"])
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.username == username;
+        && request.resource.data.username == username
+        && username.matches("^[a-z0-9_-]{3,30}$")
+        && existsAfter(/databases/$(database)/documents/creatorProfiles/$(request.auth.uid))
+        && getAfter(/databases/$(database)/documents/creatorProfiles/$(request.auth.uid)).data.username == username;
       allow list, update, delete: if false;
     }
 
