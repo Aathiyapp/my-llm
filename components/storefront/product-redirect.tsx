@@ -1,15 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { doc, getDoc } from "firebase/firestore";
+import { ArrowLeft, ArrowUpRight, MessageCircle } from "lucide-react";
 import { db } from "@/lib/firebase/client";
 import { getSafeRedirectUrl } from "@/lib/services/url";
 import { trackProductClick } from "@/lib/services/analytics";
 
+type InternalProduct = { name:string; description:string; imageURL:string; price:string; recommendation:string; whatsappUrl:string };
+
 export function ProductRedirect({ productId }: { productId: string }) {
   const [username, setUsername] = useState<string | null>(null);
   const [message, setMessage] = useState("Taking you to the seller…");
+  const [internalProduct,setInternalProduct]=useState<InternalProduct|null>(null);
   const returnTo = username ? `/${encodeURIComponent(username)}` : "/";
 
   useEffect(() => {
@@ -42,12 +47,7 @@ export function ProductRedirect({ productId }: { productId: string }) {
       if (data.active !== true || data.availability === "deactivated") { setMessage("This product is no longer available."); return; }
       if (data.availability === "out_of_stock") { setMessage("This product is currently out of stock."); return; }
       if (data.availability === "coming_soon") { setMessage("This product is coming soon."); return; }
-      const destination = getSafeRedirectUrl(String(data.destinationURL ?? ""));
-      if (!destination) { setMessage("This product link isn’t a valid web address."); return; }
 
-      // Keep /go in browser history. When visitors return from WhatsApp or a seller
-      // app, the session marker prevents the same redirect from firing again.
-      try { sessionStorage.setItem(returnKey, "1"); } catch {}
       const creatorId = typeof data.creatorId === "string" ? data.creatorId : "";
       if (creatorId) {
         await Promise.race([
@@ -55,6 +55,30 @@ export function ProductRedirect({ productId }: { productId: string }) {
           new Promise<void>((resolve) => window.setTimeout(resolve, 900)),
         ]);
       }
+
+      if (data.redirectType === "internal") {
+        const profile = creatorId ? await getDoc(doc(db, "creatorProfiles", creatorId)) : null;
+        const socialLinks = profile?.exists() ? profile.data().socialLinks ?? {} : {};
+        const rawWhatsApp = typeof socialLinks.whatsapp === "string" ? socialLinks.whatsapp : "";
+        const digits = rawWhatsApp.replace(/\D/g, "");
+        const whatsappUrl = rawWhatsApp.startsWith("http") ? getSafeRedirectUrl(rawWhatsApp) ?? "" : digits.length >= 10 && digits.length <= 15 ? `https://wa.me/${digits}?text=${encodeURIComponent(`Hi, I’m interested in ${String(data.title ?? "this product")}.`)}` : "";
+        if (!cancelled) {
+          setInternalProduct({
+            name:String(data.title??"Product"),
+            description:String(data.description??""),
+            imageURL:String(data.imageURL??""),
+            price:String(data.displayPrice??""),
+            recommendation:String(data.recommendation??""),
+            whatsappUrl,
+          });
+          setMessage("Available directly from this creator.");
+        }
+        return;
+      }
+
+      const destination = getSafeRedirectUrl(String(data.destinationURL ?? ""));
+      if (!destination) { setMessage("This product link isn’t a valid web address."); return; }
+      try { sessionStorage.setItem(returnKey, "1"); } catch {}
       if (!cancelled) window.location.assign(destination);
     }).catch(() => {
       if (!cancelled) setMessage("We couldn’t open that product right now.");
@@ -65,6 +89,8 @@ export function ProductRedirect({ productId }: { productId: string }) {
       window.removeEventListener("pageshow", onPageShow);
     };
   }, [productId]);
+
+  if(internalProduct)return <main className="min-h-screen bg-[#faf8ff] px-4 py-8 text-[#24143f]"><div className="mx-auto max-w-2xl"><Link href={returnTo} className="inline-flex items-center gap-2 text-xs font-bold text-[#7b35bc]"><ArrowLeft size={15}/> Back to @{username}’s store</Link><article className="mt-5 overflow-hidden rounded-3xl border border-[#eee6f7] bg-white shadow-sm"><div className="relative aspect-[1.2/1] bg-[#f4eff8]">{internalProduct.imageURL&&<Image src={internalProduct.imageURL} alt={internalProduct.name} fill unoptimized sizes="(max-width:640px) 100vw, 640px" className="object-contain p-4"/>}</div><div className="p-6 sm:p-8"><p className="text-[10px] font-bold uppercase tracking-[.17em] text-[#8b22ef]">Direct from the creator</p><h1 className="mt-2 text-2xl font-black">{internalProduct.name}</h1>{internalProduct.price&&<p className="mt-2 text-lg font-bold">{internalProduct.price}</p>}{internalProduct.description&&<p className="mt-4 text-sm leading-7 text-[#71647e]">{internalProduct.description}</p>}{internalProduct.recommendation&&<p className="mt-4 rounded-2xl bg-[#f8f3fc] p-4 text-sm leading-6 text-[#715c83]">{internalProduct.recommendation}</p>}<p className="mt-5 text-xs text-[#9485a1]">{message}</p>{internalProduct.whatsappUrl?<a href={internalProduct.whatsappUrl} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[#8b22ef] px-5 text-sm font-bold text-white"><MessageCircle size={16}/> Enquire with creator <ArrowUpRight size={15}/></a>:<p className="mt-5 rounded-xl bg-[#f8f3fc] p-3 text-xs leading-5 text-[#715c83]">This creator has not added a WhatsApp contact. Return to their store to find their other contact links.</p>}<Link href={returnTo} className="mt-4 inline-flex min-h-10 w-full items-center justify-center rounded-full border border-[#e9e0f1] text-sm font-semibold text-[#715c83]">Continue browsing</Link></div></article></div></main>;
 
   return <main className="grid min-h-screen place-items-center bg-[#faf8ff] px-5 text-center">
     <section className="max-w-sm">
