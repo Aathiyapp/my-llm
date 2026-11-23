@@ -31,8 +31,8 @@ service cloud.firestore {
         // A store suspended for 30-day inactivity cannot be republished by
         // the owner directly; support must review and reactivate it.
         && (!(resource.data.keys().hasAny(["suspendedAt"]))
-          || request.resource.data.published != true
-          || request.resource.data.published == resource.data.published);
+          || (request.resource.data.suspendedAt == resource.data.suspendedAt
+            && request.resource.data.published != true));
       allow delete: if false;
     }
 
