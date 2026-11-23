@@ -226,7 +226,8 @@ export function Storefront({ username }: { username: string }) {
 function ProductCard({ product, username, accent }: { product: StoreProduct; username: string; accent: string }) {
   const [shared, setShared] = useState(false);
   const productUrl = `/go/${product.id}?u=${encodeURIComponent(username)}`;
-  const actionLabel = product.redirectType === "internal" ? "View details" :\n    product.redirectType === "whatsapp" ? "Enquire on WhatsApp" :
+  const actionLabel = product.redirectType === "internal" ? "View details" :
+    product.redirectType === "whatsapp" ? "Enquire on WhatsApp" :
     product.redirectType === "instagram" ? "View on Instagram" :
     product.redirectType === "facebook" ? "View on Facebook" :
     product.redirectType === "other" ? "Open product link" : "Shop now";
