@@ -47,7 +47,7 @@ export const firebaseCreatorRepository: CreatorRepository = {
     const snap = await getDoc(doc(requireDb(), "usernames", normalized));
     return !snap.exists() || (Boolean(uid) && snap.data().uid === uid);
   },
-  async completeOnboarding(uid, email, creator) {
+  async completeOnboarding(uid, email, creator, termsVersion) {
     const user = requireOwner(uid);
     const normalized = normalizeUsername(creator.username);
     if (!isValidUsername(normalized) || normalized !== creator.username) throw new Error("Choose a valid lowercase store username.");
@@ -67,8 +67,8 @@ export const firebaseCreatorRepository: CreatorRepository = {
       if (!reservation.exists()) transaction.set(usernameRef, { uid, username: normalized, createdAt: serverTimestamp() });
       if (profile.exists()) transaction.update(profileRef, { ...profileData, createdAt: profile.data().createdAt });
       else transaction.set(profileRef, profileData);
-      if (account.exists()) transaction.update(userRef, { onboardingCompleted: true });
-      else transaction.set(userRef, { uid, email: email || user.email || "", createdAt: serverTimestamp(), onboardingCompleted: true });
+      if (account.exists()) transaction.update(userRef, { onboardingCompleted: true, termsVersion, termsAcceptedAt: serverTimestamp() });
+      else transaction.set(userRef, { uid, email: email || user.email || "", createdAt: serverTimestamp(), onboardingCompleted: true, termsVersion, termsAcceptedAt: serverTimestamp() });
     });
   },
   async save(creator) {
