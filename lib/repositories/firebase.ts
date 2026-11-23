@@ -108,13 +108,22 @@ export const firebaseProductRepository: ProductRepository = {
   },
   async save(product) {
     requireOwner(product.creatorId);
-    const destination = new URL(product.destinationUrl);
-    if (!["http:", "https:"].includes(destination.protocol)) throw new Error("Product links must begin with http:// or https://.");
+    const isInternal = product.redirectType === "internal";
+    let destinationURL = "";
+    if (!isInternal) {
+      try {
+        const destination = new URL(product.destinationUrl);
+        if (!["http:", "https:"].includes(destination.protocol)) throw new Error();
+        destinationURL = destination.toString();
+      } catch {
+        throw new Error("Product links must be a valid http:// or https:// address.");
+      }
+    }
     if (!product.name.trim() || product.name.length > 100) throw new Error("Enter a product name under 100 characters.");
     const store = requireDb();
     const ref = doc(store, "products", product.id);
     const previous = await getDoc(ref);
-    const data = { id: product.id, creatorId: product.creatorId, title: product.name.trim(), description: product.description.trim(), imageURL: product.imageUrl, displayPrice: product.price ?? "", currency: product.currency ?? "INR", destinationURL: destination.toString(), redirectType: product.redirectType ?? "website", source: product.source.trim(), sourceDomain: urlHost(destination.toString()), reviewURL: product.reviewUrl ?? "", reviewType: product.reviewType ?? (product.reviewUrl ? "external" : ""), recommendation: product.recommendation.trim(), featured: product.featured, active: (product.availability ?? (product.active === false ? "deactivated" : "active")) !== "deactivated", availability: product.availability ?? (product.active === false ? "deactivated" : "active"), sortOrder: product.order, createdAt: previous.exists() ? previous.data().createdAt : serverTimestamp(), updatedAt: serverTimestamp() };
+    const data = { id: product.id, creatorId: product.creatorId, title: product.name.trim(), description: product.description.trim(), imageURL: product.imageUrl, displayPrice: product.price ?? "", currency: product.currency ?? "INR", destinationURL, redirectType: product.redirectType ?? "website", source: product.source.trim(), sourceDomain: destinationURL ? urlHost(destinationURL) : "", reviewURL: product.reviewUrl ?? "", reviewType: product.reviewType ?? (product.reviewUrl ? "external" : ""), recommendation: product.recommendation.trim(), featured: product.featured, active: (product.availability ?? (product.active === false ? "deactivated" : "active")) !== "deactivated", availability: product.availability ?? (product.active === false ? "deactivated" : "active"), sortOrder: product.order, createdAt: previous.exists() ? previous.data().createdAt : serverTimestamp(), updatedAt: serverTimestamp() };
     await setDoc(ref, data);
   },
   async delete(productId) {
