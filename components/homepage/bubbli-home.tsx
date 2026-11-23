@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { collection, getDocs, limit, query, where } from "firebase/firestore";
-import { ArrowRight, Search, ShoppingBag, Store, Layers3, UserRound, Plus, Menu, X, Sparkles, Users, Gift, Shirt, Gem, House, Leaf, Scissors, Camera, Gamepad2, Utensils } from "lucide-react";
+import { ArrowRight, Search, ShoppingBag, Store, Layers3, UserRound, Plus, Menu, X, Sparkles, Users, Gift, Shirt, Gem, House, Leaf, Scissors, Camera, Gamepad2, Utensils, Clock } from "lucide-react";
 import { db } from "@/lib/firebase/client";
 import { showcaseStores } from "@/lib/demo/showcase-stores";
 
@@ -18,6 +18,7 @@ const categories = [
   { name:"Fashion", sub:"Apparel, Shirts, T-shirts", icon:Shirt, color:"#1599d5", bg:"#e8f5fc" },
   { name:"Sarees & Ethnic Wear", sub:"", icon:Scissors, color:"#e87520", bg:"#fff3e5" },
   { name:"Jewellery", sub:"& Accessories", icon:Gem, color:"#e45d35", bg:"#fff0ed" },
+  { name:"Watches & Accessories", sub:"Timepieces, everyday accessories", icon:Clock, color:"#5374b8", bg:"#edf1fb" },
   { name:"Home & Living", sub:"Decor, Organisers", icon:House, color:"#d89a13", bg:"#fbf5e7" },
   { name:"Lifestyle", sub:"Wellness, Personal, Everyday Essentials", icon:Leaf, color:"#56a638", bg:"#edf7e9" },
   { name:"Handmade & Craft", sub:"Crochet, Art, DIY", icon:Scissors, color:"#a04bd1", bg:"#f5eafa" },
