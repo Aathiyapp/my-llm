@@ -27,7 +27,12 @@ service cloud.firestore {
       allow create: if isOwner(uid) && request.resource.data.uid == request.auth.uid;
       allow update: if isOwner(uid)
         && request.resource.data.uid == resource.data.uid
-        && request.resource.data.username == resource.data.username;
+        && request.resource.data.username == resource.data.username
+        // A store suspended for 30-day inactivity cannot be republished by
+        // the owner directly; support must review and reactivate it.
+        && (!(resource.data.keys().hasAny(["suspendedAt"]))
+          || request.resource.data.published != true
+          || request.resource.data.published == resource.data.published);
       allow delete: if false;
     }
 
@@ -71,6 +76,8 @@ service cloud.firestore {
         && (
           (request.resource.data.type == "store_view"
             && creatorIsPublished(request.resource.data.creatorId)
+            && get(/databases/\$(database)/documents/creatorProfiles/\$(request.resource.data.creatorId)).data.username == request.resource.data.username
+            && request.resource.data.path == "/" + request.resource.data.username
             && !("productId" in request.resource.data))
           ||
           (request.resource.data.type == "product_click"
