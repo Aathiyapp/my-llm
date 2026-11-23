@@ -6,23 +6,13 @@ import { useEffect, useMemo, useState } from "react";
 import { collection, getDocs, limit, query, where } from "firebase/firestore";
 import { ArrowRight, Search, ShoppingBag, Store, Layers3, UserRound, Plus, Menu, X, Sparkles, Users, Gift, Shirt, Gem, House, Leaf, Scissors, Camera, Gamepad2, Utensils } from "lucide-react";
 import { db } from "@/lib/firebase/client";
+import { showcaseStores } from "@/lib/demo/showcase-stores";
 
 type ShowcaseStore = { id: string; name: string; username: string; category: string; tagline: string; image: string; logo: string; featured?: boolean };
-const demoStores: ShowcaseStore[] = [
-  { id:"giftzown", name:"GiftzOwn", username:"giftz_own", category:"Gifting", tagline:"Personalised Gifts & Hampers", image:"https://images.unsplash.com/photo-1513201099705-a9746e1e201f?auto=format&fit=crop&w=900&q=85", logo:"🎁", featured:true },
-  { id:"shirthub", name:"ShirtHub", username:"shirthub", category:"Fashion", tagline:"Men’s Shirts · Casual · Formal", image:"https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=900&q=85", logo:"👕", featured:true },
-  { id:"sareesaga", name:"SareeSaga", username:"sareesaga", category:"Sarees & Ethnic Wear", tagline:"Sarees · Ethnic Wear · Blouses", image:"https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=900&q=85", logo:"🪷", featured:true },
-  { id:"crochetnest", name:"CrochetNest", username:"crochetnest", category:"Handmade & Craft", tagline:"Handmade Crochet & Knit Items", image:"https://images.unsplash.com/photo-1610701596007-11502861dcfa?auto=format&fit=crop&w=900&q=85", logo:"🧶" },
-  { id:"homenest", name:"HomeNest", username:"homenest", category:"Home & Living", tagline:"Home Decor · Organisers · Lifestyle", image:"https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=900&q=85", logo:"🦋" },
-  { id:"theprintlab", name:"ThePrintLab", username:"theprintlab", category:"Photography & Prints", tagline:"Custom Prints · Frames · Photo Gifts", image:"https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=900&q=85", logo:"🎮" },
-  { id:"foodcraft", name:"FoodCraft", username:"foodcraft", category:"Food & Beverages", tagline:"Homemade · Fresh · Organic", image:"https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=900&q=85", logo:"🍲" },
-  { id:"pixelstudio", name:"PixelStudio", username:"pixelstudio", category:"Digital Products", tagline:"Templates · Presets · Downloads", image:"https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&w=900&q=85", logo:"📱" },
-  { id:"hourandhand", name:"Hour & Hand", username:"hourandhand", category:"Watches & Accessories", tagline:"Everyday timepieces · Minimal accessories", image:"https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=900&q=85", logo:"⌚" },
-  { id:"glowtheory", name:"Glow Theory", username:"glowtheory", category:"Beauty & Personal Care", tagline:"Everyday skincare · Self-care essentials", image:"https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?auto=format&fit=crop&w=900&q=85", logo:"✨" },
-  { id:"goodgrainpantry", name:"Good Grain Pantry", username:"goodgrainpantry", category:"Food & Beverages", tagline:"Breakfast staples · Small-batch snacks", image:"https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=900&q=85", logo:"🥣" },
-  { id:"creatordesk", name:"The Creator Desk", username:"creatordesk", category:"Digital Products", tagline:"Templates · Creator tools · Workflows", image:"https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&w=900&q=85", logo:"🖥️" },
-  { id:"paperandlight", name:"Paper & Light Studio", username:"paperandlight", category:"Photography & Prints", tagline:"Photo keepsakes · Wall art · Prints", image:"https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=900&q=85", logo:"📷" },
-];
+const demoStores: ShowcaseStore[] = showcaseStores.map((store) => ({
+  id: store.id, name: store.name, username: store.username, category: store.category,
+  tagline: store.tagline, image: store.cover, logo: store.logo,
+}));
 const categories = [
   { name:"Gifting", sub:"Puzzles, Hampers, Custom Gifts", icon:Gift, color:"#bd28dc", bg:"#f8e9fb" },
   { name:"Fashion", sub:"Apparel, Shirts, T-shirts", icon:Shirt, color:"#1599d5", bg:"#e8f5fc" },
