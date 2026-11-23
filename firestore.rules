@@ -26,7 +26,8 @@ service cloud.firestore {
         && data.destinationURL is string && data.destinationURL.size() <= 2048
         && data.displayPrice is string && data.displayPrice.size() <= 40
         && data.currency is string && data.currency.size() <= 5
-        && data.redirectType in ["website", "whatsapp", "instagram", "facebook", "other"]
+        && data.redirectType in ["website", "whatsapp", "instagram", "facebook", "other", "internal"]
+        && (data.redirectType == "internal" ? data.destinationURL == "" : data.destinationURL.size() > 0)
         && data.source is string && data.source.size() <= 100
         && data.sourceDomain is string && data.sourceDomain.size() <= 253
         && data.reviewURL is string && data.reviewURL.size() <= 2048
