@@ -26,6 +26,7 @@ const categories = [
   { name:"Food & Beverages", sub:"Homemade, Organic", icon:Utensils, color:"#db672b", bg:"#fff0e7" },
   { name:"Photography & Prints", sub:"Frames, Merch", icon:Camera, color:"#2796ba", bg:"#e9f5f8" },
   { name:"Digital Products", sub:"Templates, Presets", icon:Gamepad2, color:"#7454d5", bg:"#f0ebfc" },
+  { name:"UGC & Creator Services", sub:"UGC videos, content and brand shoots", icon:Camera, color:"#bd4d9b", bg:"#fbedf7" },
   { name:"Other", sub:"Add your business", icon:Plus, color:"#8050cf", bg:"#f5efff" },
 ];
 const collections = [
