@@ -8,6 +8,8 @@ initializeApp();
 const db = getFirestore();
 const REGION = "asia-south1";
 const INACTIVITY_MS = 30 * 24 * 60 * 60 * 1000;
+// Existing creators receive a full 30-day notice window from policy rollout.
+const INACTIVITY_POLICY_START = Timestamp.fromDate(new Date("2026-11-23T00:00:00+05:30"));
 
 setGlobalOptions({maxInstances: 10, region: REGION});
 
@@ -50,7 +52,11 @@ export const suspendInactiveCreatorStores = onSchedule(
     for (const profile of snapshot.docs) {
       const lastView = profile.get("lastStoreViewAt");
       const createdAt = profile.get("createdAt");
-      const activity = lastView instanceof Timestamp ? lastView : createdAt instanceof Timestamp ? createdAt : null;
+      const activity = lastView instanceof Timestamp
+        ? (lastView.toMillis() > INACTIVITY_POLICY_START.toMillis() ? lastView : INACTIVITY_POLICY_START)
+        : createdAt instanceof Timestamp
+          ? (createdAt.toMillis() > INACTIVITY_POLICY_START.toMillis() ? createdAt : INACTIVITY_POLICY_START)
+          : null;
       if (!activity) {
         skipped++;
         continue;
