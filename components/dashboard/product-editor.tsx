@@ -12,7 +12,7 @@ import { validateHttpUrl } from "@/lib/services/url";
 import { imageFileToDataUrl } from "@/lib/services/image";
 import type { ProductAvailability, RedirectType, StoreProduct } from "@/types/store";
 
-const blank = { name:"", description:"", imageUrl:"", destinationUrl:"", redirectType:"website" as RedirectType, price:"", source:"", recommendation:"", reviewUrl:"", featured:false, availability:"active" as ProductAvailability };
+const blank = { name:"", description:"", imageUrl:"", destinationUrl:"", redirectType:"internal" as RedirectType, price:"", source:"", recommendation:"", reviewUrl:"", featured:false, availability:"active" as ProductAvailability };
 export function ProductEditor({ productId }: { productId?: string }) {
   const router = useRouter();
   const [data,setData] = useState(blank); const [link,setLink] = useState(""); const [metadataMessage,setMetadataMessage] = useState(""); const [extracting,setExtracting] = useState(false); const [error,setError] = useState(""); const [saving,setSaving] = useState(false); const [loading,setLoading] = useState(Boolean(productId));
