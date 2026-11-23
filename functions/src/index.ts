@@ -14,7 +14,7 @@ const INACTIVITY_POLICY_START = Timestamp.fromDate(new Date("2026-11-23T00:00:00
 setGlobalOptions({maxInstances: 10, region: REGION});
 
 /**
- * Update the creator's last genuine recorded storefront-view timestamp.
+ * Update the creator's private last recorded storefront-view timestamp.
  * The Firestore rules restrict event creation to published profiles and
  * require the event username to match the profile username.
  */
@@ -26,10 +26,10 @@ export const recordCreatorStoreView = onDocumentCreated(
     const profileRef = db.collection("creatorProfiles").doc(data.creatorId);
     const profile = await profileRef.get();
     if (!profile.exists || profile.get("published") !== true || profile.get("username") !== data.username) return;
-    await profileRef.update({
+    await db.collection("creatorPrivate").doc(data.creatorId).set({
       lastStoreViewAt: event.data?.createTime ?? FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
-    });
+    }, {merge: true});
   },
 );
 
@@ -50,7 +50,8 @@ export const suspendInactiveCreatorStores = onSchedule(
     let pending = 0;
 
     for (const profile of snapshot.docs) {
-      const lastView = profile.get("lastStoreViewAt");
+      const privateActivity = await db.collection("creatorPrivate").doc(profile.id).get();
+      const lastView = privateActivity.get("lastStoreViewAt");
       const createdAt = profile.get("createdAt");
       const activity = lastView instanceof Timestamp
         ? (lastView.toMillis() > INACTIVITY_POLICY_START.toMillis() ? lastView : INACTIVITY_POLICY_START)
