@@ -30,6 +30,7 @@ export function OnboardingFlow() {
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [hydratedUid, setHydratedUid] = useState("");
   const userUid = auth?.currentUser?.uid ?? "";
   const draftStorageKey = userUid ? `bubbli:onboarding:draft:${userUid}` : "";
@@ -128,6 +129,7 @@ export function OnboardingFlow() {
   }
 
   async function publishStore() {
+    if (!acceptedTerms) { setError("Please accept the Terms of Service and Privacy Policy before publishing."); return; }
     const user = auth?.currentUser;
     if (!user) { router.replace("/login"); return; }
     setSaving(true); setError("");
@@ -154,7 +156,8 @@ export function OnboardingFlow() {
       {step===1 && <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{categories.map((item)=><button key={item} type="button" onClick={()=>patch({category:item})} className={`rounded-2xl border p-4 text-left text-sm font-semibold ${draft.category===item ? "border-[#b88be9] bg-[#f8f0ff] text-[#7d22cb]" : "border-[#eee6f7]"}`}>{item}{draft.category===item && <Check size={15} className="float-right"/>}</button>)}</div>}
       {step===2 && <div className="space-y-4"><p className="text-sm text-[#7e8980]">Everything here is optional.</p>{socials.map(({key,label,placeholder})=><label className="field-label" key={key}><span className="inline-flex items-center gap-2"><Link2 size={14}/>{label}</span><input className="field-input" type="url" placeholder={placeholder} value={draft.socialLinks[key] ?? ""} onChange={(e)=>setSocial(key,e.target.value)}/></label>)}</div>}
       {step===3 && <div className="mx-auto max-w-md rounded-3xl bg-[#faf8ff] px-5 py-7 text-center"><div className="mx-auto grid size-20 place-items-center overflow-hidden rounded-full bg-[#e2e9df] font-serif text-3xl italic text-[#4f7359]">{draft.avatarUrl ? <span className="h-full w-full bg-cover bg-center" style={{backgroundImage:`url(${draft.avatarUrl})`}}/> : draft.displayName[0]?.toUpperCase()}</div><h3 className="mt-4 text-xl font-semibold">{draft.displayName}</h3><p className="mt-1 text-xs text-[#799080]">@{draft.username} · {draft.category}</p><p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-[#738077]">{draft.bio || "A little space for the things you love to recommend."}</p><div className="mt-6 rounded-2xl border border-dashed border-[#d3dcd1] bg-white px-5 py-8"><Plus className="mx-auto text-[#8b22ef]"/><p className="mt-3 text-sm font-semibold">Your store is ready!</p><p className="mt-1 text-xs text-[#8b958d]">Publish now, then start adding recommendations.</p></div></div>}
+      {step===3 && <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-2xl border border-[#e9ddf4] bg-white p-4 text-left"><input type="checkbox" checked={acceptedTerms} onChange={(event)=>setAcceptedTerms(event.target.checked)} className="mt-1 size-4 accent-[#8b22ef]"/><span className="text-xs leading-5 text-[#6f607f]">I agree to Bubbli’s <Link href="/terms" target="_blank" className="font-bold text-[#7b35bc] underline">Terms of Service</Link> and <Link href="/privacy" target="_blank" className="font-bold text-[#7b35bc] underline">Privacy Policy</Link>. I understand that a store with no recorded views for 30 consecutive days may be unpublished and that reactivation requires contacting support.</span></label>}
       {error && <p role="alert" className="mt-5 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-      <div className="mt-8 flex items-center justify-between border-t border-[#edf0eb] pt-5"><Button variant="ghost" disabled={step===0 || saving} onClick={()=>setStep((value)=>Math.max(0,value-1))}><ArrowLeft size={15}/> Back</Button>{step<3 ? <Button onClick={()=>void next()} disabled={checking}>{checking ? "Checking…" : <>Continue <ArrowRight size={15}/></>}</Button> : <Button onClick={()=>void publishStore()} disabled={saving}>{saving ? "Creating your store…" : <>Publish store <Check size={15}/></>}</Button>}</div>
+      <div className="mt-8 flex items-center justify-between border-t border-[#edf0eb] pt-5"><Button variant="ghost" disabled={step===0 || saving} onClick={()=>setStep((value)=>Math.max(0,value-1))}><ArrowLeft size={15}/> Back</Button>{step<3 ? <Button onClick={()=>void next()} disabled={checking}>{checking ? "Checking…" : <>Continue <ArrowRight size={15}/></>}</Button> : <Button onClick={()=>void publishStore()} disabled={saving||!acceptedTerms}>{saving ? "Creating your store…" : <>Publish store <Check size={15}/></>}</Button>}</div>
     </section></div></div></main>;
 }
