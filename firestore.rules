@@ -109,7 +109,7 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(["uid", "username", "createdAt"])
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.username == username
-        && username.matches("^[a-z0-9_-]{3,30}$")
+        && username.matches("^[a-z0-9][a-z0-9_-]{1,28}[a-z0-9]$")
         && existsAfter(/databases/$(database)/documents/creatorProfiles/$(request.auth.uid))
         && getAfter(/databases/$(database)/documents/creatorProfiles/$(request.auth.uid)).data.username == username;
       allow list, update, delete: if false;
