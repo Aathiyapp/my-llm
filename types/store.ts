@@ -1,4 +1,4 @@
-export type StoreCategory = "Gifting" | "Fashion" | "Sarees & Ethnic Wear" | "Jewellery" | "Watches & Accessories" | "Home & Living" | "Lifestyle" | "Handmade & Craft" | "Beauty & Personal Care" | "Food & Beverages" | "Photography & Prints" | "Digital Products" | "Tech" | "Fitness" | "Home" | "Gaming" | "Food" | "Other";
+export type StoreCategory = "Gifting" | "Fashion" | "Sarees & Ethnic Wear" | "Jewellery" | "Watches & Accessories" | "Home & Living" | "Lifestyle" | "Handmade & Craft" | "Beauty & Personal Care" | "Food & Beverages" | "Photography & Prints" | "Digital Products" | "UGC & Creator Services" | "Tech" | "Fitness" | "Home" | "Gaming" | "Food" | "Other";
 export type SocialLinks = { instagram?: string; youtube?: string; facebook?: string; telegram?: string; website?: string; whatsapp?: string; other?: string };
 export type StoreTheme = "ananya" | "meera" | "sundar" | "minimal" | "bold" | "lifestyle";
 export type ProductAvailability = "active" | "deactivated" | "out_of_stock" | "coming_soon";
