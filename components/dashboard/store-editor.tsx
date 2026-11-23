@@ -11,7 +11,7 @@ import { validateHttpUrl } from "@/lib/services/url";
 import { imageFileToDataUrl } from "@/lib/services/image";
 import type { Creator, StoreCategory, StoreTheme } from "@/types/store";
 
-const cats:StoreCategory[]=["Tech","Beauty","Fashion","Fitness","Home","Gaming","Food","Lifestyle","Other"];
+const cats:StoreCategory[]=["Gifting","Fashion","Sarees & Ethnic Wear","Jewellery","Watches & Accessories","Home & Living","Lifestyle","Handmade & Craft","Beauty & Personal Care","Food & Beverages","Photography & Prints","Digital Products","Tech","Fitness","Gaming","Other"];
 export function StoreEditor(){const[creator,setCreator]=useState<Creator | null>(null);const[notice,setNotice]=useState("");
   useEffect(()=>{const uid=auth?.currentUser?.uid;if(!uid)return;void getCreatorRepository().getForUser(uid).then((profile)=>setCreator(profile)).catch((error)=>setNotice(error instanceof Error?error.message:"Could not load your store."));},[]);
   async function photo(e:ChangeEvent<HTMLInputElement>){const file=e.target.files?.[0];if(!file)return;try{const avatarUrl=await imageFileToDataUrl(file,512);setCreator((v)=>v?({...v,avatarUrl}):v);setNotice("");}catch(caught){setNotice(caught instanceof Error?caught.message:"Could not use that image.");}}
