@@ -73,6 +73,6 @@ export const suspendInactiveCreatorStores = onSchedule(
     }
 
     if (pending > 0) await batch.commit();
-    return {suspended, skipped, scanned: snapshot.size};
+    console.info("Inactive storefront sweep completed", {suspended, skipped, scanned: snapshot.size});
   },
 );
