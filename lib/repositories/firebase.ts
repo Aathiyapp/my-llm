@@ -6,18 +6,18 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase/client";
 import { isValidUsername, normalizeUsername } from "@/lib/services/url";
-import type { AnalyticsRepository, CollectionRepository, CreatorRepository, ProductRepository } from "@/lib/repositories/contracts";
-import type { AnalyticsDay, AnalyticsProduct, AnalyticsSource, Creator, CreatorAccount, StoreCollection, StoreProduct } from "@/types/store";
+import type { AnalyticsRepository, CollectionRepository, CreatorRepository, ProductRepository, LeadRepository } from "@/lib/repositories/contracts";
+import type { AnalyticsDay, AnalyticsProduct, AnalyticsSource, Creator, CreatorAccount, StoreCollection, StoreProduct, CreatorLead } from "@/types/store";
 
 function requireDb() { if (!db) throw new Error("Firebase is not configured. Add the required Firebase web app environment variables."); return db; }
-function requireOwner(uid: string) { const user = auth?.currentUser; if (!user || user.uid !== uid) throw new Error("Sign in to manage this CreatorStore."); return user; }
+function requireOwner(uid: string) { const user = auth?.currentUser; if (!user || user.uid !== uid) throw new Error("Sign in to manage Bubbli."); return user; }
 function urlHost(value: string) { try { return new URL(value).hostname.replace(/^www\./, ""); } catch { return ""; } }
 function profileFromDoc(data: DocumentData): Creator {
-  return { id: String(data.uid), username: String(data.username), displayName: String(data.displayName), bio: String(data.bio ?? ""), avatarUrl: typeof data.photoURL === "string" ? data.photoURL : "", category: data.category, socialLinks: data.socialLinks ?? {}, theme: data.theme ?? "gold", published: data.published === true };
+  return { id: String(data.uid), username: String(data.username), displayName: String(data.displayName), bio: String(data.bio ?? ""), avatarUrl: typeof data.photoURL === "string" ? data.photoURL : "", category: data.category, socialLinks: data.socialLinks ?? {}, theme: (["ananya","meera","sundar","minimal","bold","lifestyle"].includes(data.theme) ? data.theme : "ananya") as Creator["theme"], published: data.published === true };
 }
 function productFromDoc(snap: QueryDocumentSnapshot<DocumentData>, collectionIds: string[]): StoreProduct {
   const data = snap.data();
-  return { id: snap.id, creatorId: String(data.creatorId), name: String(data.title), description: String(data.description ?? ""), imageUrl: String(data.imageURL ?? ""), destinationUrl: String(data.destinationURL), redirectType: data.redirectType, price: typeof data.displayPrice === "string" ? data.displayPrice : undefined, currency: typeof data.currency === "string" ? data.currency : "INR", source: String(data.source ?? ""), recommendation: String(data.recommendation ?? ""), reviewUrl: typeof data.reviewURL === "string" ? data.reviewURL : undefined, reviewType: data.reviewType, featured: data.featured === true, active: data.active === true, clicks: 0, collectionIds, order: Number(data.sortOrder ?? 0) };
+  return { id: snap.id, creatorId: String(data.creatorId), name: String(data.title), description: String(data.description ?? ""), imageUrl: String(data.imageURL ?? ""), destinationUrl: String(data.destinationURL), redirectType: data.redirectType, price: typeof data.displayPrice === "string" ? data.displayPrice : undefined, currency: typeof data.currency === "string" ? data.currency : "INR", source: String(data.source ?? ""), recommendation: String(data.recommendation ?? ""), reviewUrl: typeof data.reviewURL === "string" ? data.reviewURL : undefined, reviewType: data.reviewType, featured: data.featured === true, active: data.active !== false, availability: data.availability ?? (data.active === false ? "deactivated" : "active"), clicks: 0, collectionIds, order: Number(data.sortOrder ?? 0) };
 }
 function collectionFromDoc(snap: QueryDocumentSnapshot<DocumentData>): StoreCollection {
   const data = snap.data();
@@ -63,7 +63,7 @@ export const firebaseCreatorRepository: CreatorRepository = {
         if (!profile.exists()) throw new Error("Your account setup needs support. Please contact the CreatorStore team.");
         return;
       }
-      const profileData = { uid, username: normalized, displayName: creator.displayName.trim(), bio: creator.bio.trim(), photoURL: creator.avatarUrl || "", category: creator.category, socialLinks: creator.socialLinks, theme: creator.theme ?? "gold", published: creator.published, createdAt: profile.exists() ? profile.data().createdAt : serverTimestamp(), updatedAt: serverTimestamp() };
+      const profileData = { uid, username: normalized, displayName: creator.displayName.trim(), bio: creator.bio.trim(), photoURL: creator.avatarUrl || "", category: creator.category, socialLinks: creator.socialLinks, theme: creator.theme ?? "ananya", published: creator.published, createdAt: profile.exists() ? profile.data().createdAt : serverTimestamp(), updatedAt: serverTimestamp() };
       if (!reservation.exists()) transaction.set(usernameRef, { uid, username: normalized, createdAt: serverTimestamp() });
       if (profile.exists()) transaction.update(profileRef, { ...profileData, createdAt: profile.data().createdAt });
       else transaction.set(profileRef, profileData);
@@ -80,7 +80,7 @@ export const firebaseCreatorRepository: CreatorRepository = {
     const usernameRef = doc(store, "usernames", normalized);
     const [profile, reservation] = await Promise.all([getDoc(profileRef), getDoc(usernameRef)]);
     if (!profile.exists() || profile.data().username !== normalized || !reservation.exists() || reservation.data().uid !== user.uid) throw new Error("Your username is immutable after onboarding. Profile changes weren’t saved.");
-    await updateDoc(profileRef, { displayName: creator.displayName.trim(), bio: creator.bio.trim(), photoURL: creator.avatarUrl ?? "", category: creator.category, socialLinks: creator.socialLinks, theme: creator.theme ?? "gold", published: creator.published, updatedAt: serverTimestamp() });
+    await updateDoc(profileRef, { displayName: creator.displayName.trim(), bio: creator.bio.trim(), photoURL: creator.avatarUrl ?? "", category: creator.category, socialLinks: creator.socialLinks, theme: creator.theme ?? "ananya", published: creator.published, updatedAt: serverTimestamp() });
   },
 };
 
@@ -113,7 +113,7 @@ export const firebaseProductRepository: ProductRepository = {
     const store = requireDb();
     const ref = doc(store, "products", product.id);
     const previous = await getDoc(ref);
-    const data = { id: product.id, creatorId: product.creatorId, title: product.name.trim(), description: product.description.trim(), imageURL: product.imageUrl, displayPrice: product.price ?? "", currency: product.currency ?? "INR", destinationURL: destination.toString(), redirectType: product.redirectType ?? "website", source: product.source.trim(), sourceDomain: urlHost(destination.toString()), reviewURL: product.reviewUrl ?? "", reviewType: product.reviewType ?? (product.reviewUrl ? "external" : ""), recommendation: product.recommendation.trim(), featured: product.featured, active: product.active !== false, sortOrder: product.order, createdAt: previous.exists() ? previous.data().createdAt : serverTimestamp(), updatedAt: serverTimestamp() };
+    const data = { id: product.id, creatorId: product.creatorId, title: product.name.trim(), description: product.description.trim(), imageURL: product.imageUrl, displayPrice: product.price ?? "", currency: product.currency ?? "INR", destinationURL: destination.toString(), redirectType: product.redirectType ?? "website", source: product.source.trim(), sourceDomain: urlHost(destination.toString()), reviewURL: product.reviewUrl ?? "", reviewType: product.reviewType ?? (product.reviewUrl ? "external" : ""), recommendation: product.recommendation.trim(), featured: product.featured, active: (product.availability ?? (product.active === false ? "deactivated" : "active")) !== "deactivated", availability: product.availability ?? (product.active === false ? "deactivated" : "active"), sortOrder: product.order, createdAt: previous.exists() ? previous.data().createdAt : serverTimestamp(), updatedAt: serverTimestamp() };
     await setDoc(ref, data);
   },
   async delete(productId) {
@@ -206,5 +206,34 @@ export const firebaseAnalyticsRepository: AnalyticsRepository = {
       totalProducts: products.length, featuredProducts: products.filter((item) => item.featured).length,
       totalCollections: collections.length, daily, topProducts, sources, periodDays: days,
     };
+  },
+};
+
+export const firebaseLeadRepository: LeadRepository = {
+  async list(creatorId) {
+    requireOwner(creatorId);
+    const snaps = await getDocs(query(collection(requireDb(), "creatorLeads"), where("creatorId", "==", creatorId)));
+    return snaps.docs.map((item) => ({ id: item.id, ...item.data() } as CreatorLead)).sort((a, b) => {
+      const at = (a.createdAt as { toMillis?: () => number } | undefined)?.toMillis?.() ?? 0;
+      const bt = (b.createdAt as { toMillis?: () => number } | undefined)?.toMillis?.() ?? 0;
+      return bt - at;
+    });
+  },
+  async save(lead) {
+    requireOwner(lead.creatorId);
+    if (!lead.name.trim() || lead.name.length > 80) throw new Error("Enter a name under 80 characters.");
+    if (!lead.contact.trim() || lead.contact.length > 120) throw new Error("Enter an email address, phone number or social handle.");
+    const store = requireDb();
+    const ref = doc(store, "creatorLeads", lead.id);
+    const previous = await getDoc(ref);
+    await setDoc(ref, { ...lead, name: lead.name.trim(), contact: lead.contact.trim(), notes: lead.notes.trim().slice(0, 1000), createdAt: previous.exists() ? previous.data().createdAt : serverTimestamp(), updatedAt: serverTimestamp() });
+  },
+  async delete(leadId) {
+    const user = auth?.currentUser;
+    if (!user) throw new Error("Sign in to manage leads.");
+    const ref = doc(requireDb(), "creatorLeads", leadId);
+    const snap = await getDoc(ref);
+    if (!snap.exists() || snap.data().creatorId !== user.uid) throw new Error("Lead not found.");
+    await deleteDoc(ref);
   },
 };

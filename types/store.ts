@@ -1,9 +1,10 @@
 export type StoreCategory = "Tech" | "Beauty" | "Fashion" | "Fitness" | "Home" | "Gaming" | "Food" | "Lifestyle" | "Other";
 export type SocialLinks = { instagram?: string; youtube?: string; facebook?: string; telegram?: string; website?: string; whatsapp?: string; other?: string };
-export type StoreTheme = "gold" | "sage" | "rose" | "midnight";
+export type StoreTheme = "ananya" | "meera" | "sundar" | "minimal" | "bold" | "lifestyle";
+export type ProductAvailability = "active" | "deactivated" | "out_of_stock" | "coming_soon";
 export type RedirectType = "website" | "whatsapp" | "instagram" | "facebook" | "other";
 export type Creator = { id: string; username: string; displayName: string; bio: string; avatarUrl?: string; category: StoreCategory; socialLinks: SocialLinks; theme?: StoreTheme; published: boolean };
-export type StoreProduct = { id: string; creatorId: string; name: string; description: string; imageUrl: string; destinationUrl: string; redirectType?: RedirectType; price?: string; currency?: string; source: string; recommendation: string; reviewUrl?: string; reviewType?: "youtube" | "instagram" | "external"; featured: boolean; active?: boolean; clicks: number; collectionIds: string[]; order: number };
+export type StoreProduct = { id: string; creatorId: string; name: string; description: string; imageUrl: string; destinationUrl: string; redirectType?: RedirectType; price?: string; currency?: string; source: string; recommendation: string; reviewUrl?: string; reviewType?: "youtube" | "instagram" | "external"; featured: boolean; active?: boolean; availability?: ProductAvailability; clicks: number; collectionIds: string[]; order: number };
 export type StoreCollection = { id: string; creatorId: string; title: string; description: string; imageUrl?: string; productIds: string[]; order: number };
 export type OnboardingDraft = { displayName: string; username: string; bio: string; avatarUrl: string; category: StoreCategory; socialLinks: SocialLinks };
 export type AnalyticsDay = { date: string; views: number; clicks: number };
@@ -11,3 +12,6 @@ export type AnalyticsProduct = { productId: string; name: string; clicks: number
 export type AnalyticsSource = { source: string; visits: number };
 export type AnalyticsSummary = { storeViews: number; productClicks: number; topProductId?: string; totalProducts?: number; featuredProducts?: number; totalCollections?: number; daily?: AnalyticsDay[]; topProducts?: AnalyticsProduct[]; sources?: AnalyticsSource[]; periodDays?: number };
 export type CreatorAccount = { uid: string; email: string; createdAt: unknown; onboardingCompleted: boolean };
+
+export type LeadStatus = "new" | "contacted" | "follow_up" | "converted" | "not_interested";
+export type CreatorLead = { id: string; creatorId: string; name: string; contact: string; productName?: string; channel: string; status: LeadStatus; notes: string; createdAt?: unknown; updatedAt?: unknown };

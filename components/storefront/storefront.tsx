@@ -11,10 +11,12 @@ import type { Creator, StoreCollection, StoreProduct } from "@/types/store";
 import { validateHttpUrl } from "@/lib/services/url";
 
 const themeStyles = {
-  gold: { page: "#f8f6f0", ink: "#26251f", accent: "#526b50", card: "#ffffff" },
-  sage: { page: "#f3f6f1", ink: "#24352b", accent: "#4e7158", card: "#ffffff" },
-  rose: { page: "#faf4f2", ink: "#422e2c", accent: "#8a5b59", card: "#ffffff" },
-  midnight: { page: "#f2f4f7", ink: "#202c3b", accent: "#38516e", card: "#ffffff" },
+  ananya: { page: "#fff8fb", ink: "#27133e", accent: "#8b22ef", card: "#ffffff" },
+  meera: { page: "#fff7fb", ink: "#3b183d", accent: "#d52ac0", card: "#ffffff" },
+  sundar: { page: "#f9f5ff", ink: "#24103e", accent: "#a21caf", card: "#ffffff" },
+  minimal: { page: "#ffffff", ink: "#24143f", accent: "#7c3aed", card: "#ffffff" },
+  bold: { page: "#190c2c", ink: "#ffffff", accent: "#ec2c9b", card: "#28143d" },
+  lifestyle: { page: "#fff8f2", ink: "#34203c", accent: "#b832c5", card: "#ffffff" },
 } as const;
 
 export function Storefront({ username }: { username: string }) {
@@ -65,7 +67,7 @@ export function Storefront({ username }: { username: string }) {
   }, [username]);
 
   const orderedProducts = useMemo(
-    () => [...products].filter((product) => product.active !== false)
+    () => [...products].filter((product) => product.active !== false && (product.availability ?? "active") !== "deactivated")
       .sort((a, b) => Number(b.featured) - Number(a.featured) || a.order - b.order),
     [products],
   );
@@ -80,12 +82,12 @@ export function Storefront({ username }: { username: string }) {
     });
   }, [orderedProducts, collections, activeCollection, search]);
   const featuredProducts = orderedProducts.filter((product) => product.featured);
-  const theme = themeStyles[creator?.theme ?? "gold"];
+  const theme = themeStyles[creator?.theme ?? "ananya"];
 
   async function share() {
     const url = `${window.location.origin}/${username}`;
     try {
-      const result = await shareLink(url, creator?.displayName ?? "CreatorStore", creator?.bio);
+      const result = await shareLink(url, creator?.displayName ?? "Bubbli", creator?.bio);
       setNotice(result === "copied" ? "Store link copied." : result === "cancelled" ? "Share cancelled." : "Store shared.");
     } catch {
       try { await copyLink(url); setNotice("Store link copied."); }
@@ -123,7 +125,7 @@ export function Storefront({ username }: { username: string }) {
   const whatsappUrl = whatsapp ? (validateHttpUrl(whatsapp) ?? (whatsapp.replace(/\\D/g, "").length >= 10 ? `https://wa.me/${whatsapp.replace(/\\D/g, "")}` : "")) : "";
 
   return (
-    <main className="min-h-screen" style={{ background: theme.page, color: theme.ink }}>
+    <main className={`min-h-screen bubbli-theme-${creator.theme ?? "ananya"}`} style={{ background: theme.page, color: theme.ink }}>
       <header className="sticky top-0 z-30 border-b border-black/[.07] bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-8">
           <Link href={`/${username}`} className="flex min-w-0 items-center gap-3" aria-label={`${creator.displayName} home`}>
@@ -214,7 +216,7 @@ export function Storefront({ username }: { username: string }) {
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left">
           <p className="text-xs text-[#777a72]">{creator.displayName} · {creator.category}</p>
           <nav className="flex flex-wrap justify-center gap-4 text-[10px] text-[#777a72]"><Link href="/about">About</Link><Link href="/contact">Contact</Link><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><Link href="/affiliate-disclosure">Affiliate disclosure</Link><a href="mailto:support@bubbli.in">Support</a></nav>
-          <p className="text-[10px] text-[#96988f]">Storefront powered by CreatorStore</p>
+          <p className="text-[10px] text-[#96988f]">Your store, powered by Bubbli</p>
         </div>
       </footer>
     </main>
@@ -245,8 +247,10 @@ function ProductCard({ product, username, accent }: { product: StoreProduct; use
         <h3 className="mt-1 line-clamp-2 min-h-10 text-sm font-semibold leading-5 text-[#292a24]">{product.name}</h3>
         {(product.recommendation || product.description) && <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-[#777a71]">{product.recommendation || product.description}</p>}
         {product.price && <p className="mt-2 text-sm font-bold text-[#292a24]">{product.price}</p>}
+        {product.availability === "out_of_stock" && <p className="mt-2 inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-800">Out of Stock</p>}
+        {product.availability === "coming_soon" && <p className="mt-2 inline-flex rounded-full bg-purple-50 px-2.5 py-1 text-[10px] font-bold text-purple-800">Coming Soon</p>}
         <div className="mt-3 flex items-center gap-2">
-          <Link href={productUrl} className="inline-flex min-h-10 min-w-0 flex-1 items-center justify-center gap-1 rounded-full px-2 text-[10px] font-semibold text-white sm:text-xs" style={{ background: accent }}>{actionLabel} <ArrowUpRight size={13} /></Link>
+          {product.availability === "out_of_stock" || product.availability === "coming_soon" ? <span aria-disabled="true" className="inline-flex min-h-10 min-w-0 flex-1 items-center justify-center rounded-full bg-[#eee8f5] px-2 text-[10px] font-semibold text-[#8c7d9b] sm:text-xs">{product.availability === "out_of_stock" ? "Currently unavailable" : "Coming soon"}</span> : <Link href={productUrl} className="inline-flex min-h-10 min-w-0 flex-1 items-center justify-center gap-1 rounded-full px-2 text-[10px] font-semibold text-white sm:text-xs" style={{ background: accent }}>{actionLabel} <ArrowUpRight size={13} /></Link>}
           <button onClick={() => void copyProductLink()} aria-label={`Copy link for ${product.name}`} className="grid size-10 shrink-0 place-items-center rounded-full border border-black/10 text-[#62665c]"><Link2 size={14} /></button>
         </div>
         {shared && <p role="status" className="mt-2 flex items-center justify-center gap-1 text-[10px] text-[#5d7e65]"><Check size={11} /> Link copied</p>}
