@@ -69,16 +69,22 @@ service cloud.firestore {
       allow get: if isOwner(uid);
       allow list, delete: if false;
       allow create: if isOwner(uid)
-        && request.resource.data.keys().hasOnly(["uid", "email", "createdAt", "onboardingCompleted"])
+        && request.resource.data.keys().hasOnly(["uid", "email", "createdAt", "onboardingCompleted", "termsVersion", "termsAcceptedAt"])
         && request.resource.data.uid == uid
         && request.resource.data.email is string
         && request.resource.data.email.size() <= 254
-        && request.resource.data.onboardingCompleted is bool;
+        && request.resource.data.onboardingCompleted is bool
+        && request.resource.data.termsVersion is string
+        && request.resource.data.termsVersion.size() <= 20
+        && request.resource.data.termsAcceptedAt == request.time;
       allow update: if isOwner(uid)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["onboardingCompleted"])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["onboardingCompleted", "termsVersion", "termsAcceptedAt"])
         && request.resource.data.uid == resource.data.uid
         && request.resource.data.email == resource.data.email
-        && request.resource.data.onboardingCompleted is bool;
+        && request.resource.data.onboardingCompleted is bool
+        && request.resource.data.termsVersion is string
+        && request.resource.data.termsVersion.size() <= 20
+        && request.resource.data.termsAcceptedAt == request.time;
     }
 
     match /creatorProfiles/{uid} {
