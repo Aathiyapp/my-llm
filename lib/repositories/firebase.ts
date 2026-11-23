@@ -13,7 +13,7 @@ function requireDb() { if (!db) throw new Error("Firebase is not configured. Add
 function requireOwner(uid: string) { const user = auth?.currentUser; if (!user || user.uid !== uid) throw new Error("Sign in to manage Bubbli."); return user; }
 function urlHost(value: string) { try { return new URL(value).hostname.replace(/^www\./, ""); } catch { return ""; } }
 function profileFromDoc(data: DocumentData): Creator {
-  return { id: String(data.uid), username: String(data.username), displayName: String(data.displayName), bio: String(data.bio ?? ""), avatarUrl: typeof data.photoURL === "string" ? data.photoURL : "", category: data.category, socialLinks: data.socialLinks ?? {}, theme: (["ananya","meera","sundar","minimal","bold","lifestyle"].includes(data.theme) ? data.theme : "ananya") as Creator["theme"], published: data.published === true };
+  return { id: String(data.uid), username: String(data.username), displayName: String(data.displayName), bio: String(data.bio ?? ""), avatarUrl: typeof data.photoURL === "string" ? data.photoURL : "", category: data.category, socialLinks: data.socialLinks ?? {}, theme: (["ananya","meera","sundar","minimal","bold","lifestyle"].includes(data.theme) ? data.theme : "ananya") as Creator["theme"], published: data.published === true, suspendedAt: data.suspendedAt, suspensionReason: typeof data.suspensionReason === "string" ? data.suspensionReason : undefined, lastStoreViewAt: data.lastStoreViewAt };
 }
 function productFromDoc(snap: QueryDocumentSnapshot<DocumentData>, collectionIds: string[]): StoreProduct {
   const data = snap.data();
@@ -80,6 +80,7 @@ export const firebaseCreatorRepository: CreatorRepository = {
     const usernameRef = doc(store, "usernames", normalized);
     const [profile, reservation] = await Promise.all([getDoc(profileRef), getDoc(usernameRef)]);
     if (!profile.exists() || profile.data().username !== normalized || !reservation.exists() || reservation.data().uid !== user.uid) throw new Error("Your username is immutable after onboarding. Profile changes weren’t saved.");
+    if (profile.data().suspendedAt && creator.published) throw new Error("Your storefront was unpublished after 30 days without a recorded view. Email support@bubbli.in from your registered email to request reactivation.");
     await updateDoc(profileRef, { displayName: creator.displayName.trim(), bio: creator.bio.trim(), photoURL: creator.avatarUrl ?? "", category: creator.category, socialLinks: creator.socialLinks, theme: creator.theme ?? "ananya", published: creator.published, updatedAt: serverTimestamp() });
   },
 };
