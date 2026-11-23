@@ -7,9 +7,9 @@ import { doc, getDoc } from "firebase/firestore";
 import { ArrowLeft, ArrowUpRight, MessageCircle } from "lucide-react";
 import { db } from "@/lib/firebase/client";
 import { getSafeRedirectUrl } from "@/lib/services/url";
-import { trackProductClick } from "@/lib/services/analytics";
+import { trackProductClick, trackWhatsAppClick, trackExternalClick } from "@/lib/services/analytics";
 
-type InternalProduct = { name:string; description:string; imageURL:string; price:string; recommendation:string; whatsappUrl:string };
+type InternalProduct = { name:string; description:string; imageURL:string; price:string; recommendation:string; whatsappUrl:string; creatorId:string; username:string };
 
 export function ProductRedirect({ productId }: { productId: string }) {
   const [username, setUsername] = useState<string | null>(null);
@@ -50,15 +50,18 @@ export function ProductRedirect({ productId }: { productId: string }) {
       if (data.availability === "coming_soon") { setMessage("This product is coming soon."); return; }
 
       const creatorId = typeof data.creatorId === "string" ? data.creatorId : "";
-      if (creatorId) {
+      const profile = creatorId ? await getDoc(doc(firestore, "creatorProfiles", creatorId)) : null;
+      const actualUsername = profile?.exists() && typeof profile.data().username === "string"
+        ? profile.data().username as string
+        : creatorName ?? "";
+      if (creatorId && actualUsername) {
         await Promise.race([
-          trackProductClick(creatorId, creatorName ?? "", productId),
+          trackProductClick(creatorId, actualUsername, productId),
           new Promise<void>((resolve) => window.setTimeout(resolve, 900)),
         ]);
       }
 
       if (data.redirectType === "internal") {
-        const profile = creatorId ? await getDoc(doc(firestore, "creatorProfiles", creatorId)) : null;
         const socialLinks = profile?.exists() ? profile.data().socialLinks ?? {} : {};
         const rawWhatsApp = typeof socialLinks.whatsapp === "string" ? socialLinks.whatsapp : "";
         const digits = rawWhatsApp.replace(/\D/g, "");
@@ -71,6 +74,8 @@ export function ProductRedirect({ productId }: { productId: string }) {
             price:String(data.displayPrice??""),
             recommendation:String(data.recommendation??""),
             whatsappUrl,
+            creatorId,
+            username: actualUsername,
           });
           setMessage("Available directly from this creator.");
         }
@@ -80,6 +85,8 @@ export function ProductRedirect({ productId }: { productId: string }) {
       const destination = getSafeRedirectUrl(String(data.destinationURL ?? ""));
       if (!destination) { setMessage("This product link isn’t a valid web address."); return; }
       try { sessionStorage.setItem(returnKey, "1"); } catch {}
+      if (data.redirectType === "whatsapp") void trackWhatsAppClick(creatorId, actualUsername, productId);
+      else void trackExternalClick(creatorId, actualUsername, productId, data.redirectType === "website" ? "website" : data.redirectType === "instagram" || data.redirectType === "facebook" ? "social" : "marketplace");
       if (!cancelled) window.location.assign(destination);
     }).catch(() => {
       if (!cancelled) setMessage("We couldn’t open that product right now.");
@@ -91,7 +98,7 @@ export function ProductRedirect({ productId }: { productId: string }) {
     };
   }, [productId]);
 
-  if(internalProduct)return <main className="min-h-screen bg-[#faf8ff] px-4 py-8 text-[#24143f]"><div className="mx-auto max-w-2xl"><Link href={returnTo} className="inline-flex items-center gap-2 text-xs font-bold text-[#7b35bc]"><ArrowLeft size={15}/> Back to @{username}’s store</Link><article className="mt-5 overflow-hidden rounded-3xl border border-[#eee6f7] bg-white shadow-sm"><div className="relative aspect-[1.2/1] bg-[#f4eff8]">{internalProduct.imageURL&&<Image src={internalProduct.imageURL} alt={internalProduct.name} fill unoptimized sizes="(max-width:640px) 100vw, 640px" className="object-contain p-4"/>}</div><div className="p-6 sm:p-8"><p className="text-[10px] font-bold uppercase tracking-[.17em] text-[#8b22ef]">Direct from the creator</p><h1 className="mt-2 text-2xl font-black">{internalProduct.name}</h1>{internalProduct.price&&<p className="mt-2 text-lg font-bold">{internalProduct.price}</p>}{internalProduct.description&&<p className="mt-4 text-sm leading-7 text-[#71647e]">{internalProduct.description}</p>}{internalProduct.recommendation&&<p className="mt-4 rounded-2xl bg-[#f8f3fc] p-4 text-sm leading-6 text-[#715c83]">{internalProduct.recommendation}</p>}<p className="mt-5 text-xs text-[#9485a1]">{message}</p>{internalProduct.whatsappUrl?<a href={internalProduct.whatsappUrl} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[#8b22ef] px-5 text-sm font-bold text-white"><MessageCircle size={16}/> Enquire with creator <ArrowUpRight size={15}/></a>:<p className="mt-5 rounded-xl bg-[#f8f3fc] p-3 text-xs leading-5 text-[#715c83]">This creator has not added a WhatsApp contact. Return to their store to find their other contact links.</p>}<Link href={returnTo} className="mt-4 inline-flex min-h-10 w-full items-center justify-center rounded-full border border-[#e9e0f1] text-sm font-semibold text-[#715c83]">Continue browsing</Link></div></article></div></main>;
+  if(internalProduct)return <main className="min-h-screen bg-[#faf8ff] px-4 py-8 text-[#24143f]"><div className="mx-auto max-w-2xl"><Link href={returnTo} className="inline-flex items-center gap-2 text-xs font-bold text-[#7b35bc]"><ArrowLeft size={15}/> Back to @{username}’s store</Link><article className="mt-5 overflow-hidden rounded-3xl border border-[#eee6f7] bg-white shadow-sm"><div className="relative aspect-[1.2/1] bg-[#f4eff8]">{internalProduct.imageURL&&<Image src={internalProduct.imageURL} alt={internalProduct.name} fill unoptimized sizes="(max-width:640px) 100vw, 640px" className="object-contain p-4"/>}</div><div className="p-6 sm:p-8"><p className="text-[10px] font-bold uppercase tracking-[.17em] text-[#8b22ef]">Direct from the creator</p><h1 className="mt-2 text-2xl font-black">{internalProduct.name}</h1>{internalProduct.price&&<p className="mt-2 text-lg font-bold">{internalProduct.price}</p>}{internalProduct.description&&<p className="mt-4 text-sm leading-7 text-[#71647e]">{internalProduct.description}</p>}{internalProduct.recommendation&&<p className="mt-4 rounded-2xl bg-[#f8f3fc] p-4 text-sm leading-6 text-[#715c83]">{internalProduct.recommendation}</p>}<p className="mt-5 text-xs text-[#9485a1]">{message}</p>{internalProduct.whatsappUrl?<a href={internalProduct.whatsappUrl} target="_blank" rel="noopener noreferrer" onClick={() => void trackWhatsAppClick(internalProduct.creatorId, internalProduct.username, productId)} className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[#8b22ef] px-5 text-sm font-bold text-white"><MessageCircle size={16}/> Enquire with creator <ArrowUpRight size={15}/></a>:<p className="mt-5 rounded-xl bg-[#f8f3fc] p-3 text-xs leading-5 text-[#715c83]">This creator has not added a WhatsApp contact. Return to their store to find their other contact links.</p>}<Link href={returnTo} className="mt-4 inline-flex min-h-10 w-full items-center justify-center rounded-full border border-[#e9e0f1] text-sm font-semibold text-[#715c83]">Continue browsing</Link></div></article></div></main>;
 
   return <main className="grid min-h-screen place-items-center bg-[#faf8ff] px-5 text-center">
     <section className="max-w-sm">
