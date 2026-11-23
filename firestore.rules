@@ -87,6 +87,11 @@ service cloud.firestore {
         && request.resource.data.termsAcceptedAt == request.time;
     }
 
+    match /creatorPrivate/{uid} {
+      allow get: if isOwner(uid);
+      allow list, create, update, delete: if false;
+    }
+
     match /creatorProfiles/{uid} {
       allow get: if isOwner(uid) || resource.data.published == true;
       allow list: if resource.data.published == true;
@@ -102,7 +107,6 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["displayName", "bio", "photoURL", "category", "socialLinks", "theme", "published", "updatedAt"])
         && validProfile(request.resource.data)
         // System-owned activity and suspension metadata cannot be forged or removed.
-        && request.resource.data.get("lastStoreViewAt", null) == resource.data.get("lastStoreViewAt", null)
         && request.resource.data.get("suspendedAt", null) == resource.data.get("suspendedAt", null)
         && request.resource.data.get("suspensionReason", null) == resource.data.get("suspensionReason", null)
         && (!(resource.data.keys().hasAny(["suspendedAt"])) || request.resource.data.published != true);
