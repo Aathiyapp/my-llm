@@ -138,7 +138,7 @@ export function OnboardingFlow() {
         id: user.uid, username: normalizeUsername(draft.username), displayName: draft.displayName.trim(),
         bio: draft.bio.trim(), avatarUrl: draft.avatarUrl, category: draft.category,
         socialLinks: draft.socialLinks, theme: "ananya", published: true,
-      });
+      }, "2026-11-23");
       if (draftStorageKey) localStorage.removeItem(draftStorageKey);
       router.replace("/dashboard");
     } catch (caught) {
