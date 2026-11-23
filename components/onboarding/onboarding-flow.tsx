@@ -13,7 +13,7 @@ import type { OnboardingDraft, StoreCategory } from "@/types/store";
 
 const initial: OnboardingDraft = { displayName: "", username: "", bio: "", avatarUrl: "", category: "Lifestyle", socialLinks: {} };
 const steps = ["Your identity", "Your category", "Your links", "The preview"];
-const categories: StoreCategory[] = ["Gifting", "Fashion", "Sarees & Ethnic Wear", "Jewellery", "Watches & Accessories", "Home & Living", "Lifestyle", "Handmade & Craft", "Beauty & Personal Care", "Food & Beverages", "Photography & Prints", "Digital Products", "Tech", "Fitness", "Gaming", "Other"];
+const categories: StoreCategory[] = ["Gifting", "Fashion", "Sarees & Ethnic Wear", "Jewellery", "Watches & Accessories", "Home & Living", "Lifestyle", "Handmade & Craft", "Beauty & Personal Care", "Food & Beverages", "Photography & Prints", "Digital Products", "UGC & Creator Services", "Tech", "Fitness", "Gaming", "Other"];
 const socials = [
   { key: "instagram", label: "Instagram", placeholder: "https://instagram.com/you" },
   { key: "youtube", label: "YouTube", placeholder: "https://youtube.com/@you" },
