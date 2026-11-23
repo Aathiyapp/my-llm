@@ -21,7 +21,8 @@ export function ProductRedirect({ productId }: { productId: string }) {
     const requestedUsername = new URLSearchParams(window.location.search).get("u")?.trim() || "";
     const creatorName = /^[a-z0-9_-]{3,30}$/i.test(requestedUsername) ? requestedUsername : null;
     setUsername(creatorName);
-    if (!db) { setMessage("Store data is unavailable."); return; }
+    const firestore = db;
+    if (!firestore) { setMessage("Store data is unavailable."); return; }
 
     const returnKey = `bubbli:return:${productId}`;
     const showReturnMessage = () => {
@@ -40,7 +41,7 @@ export function ProductRedirect({ productId }: { productId: string }) {
     window.addEventListener("pageshow", onPageShow);
 
     let cancelled = false;
-    void getDoc(doc(db, "products", productId)).then(async (snap) => {
+    void getDoc(doc(firestore, "products", productId)).then(async (snap) => {
       if (cancelled) return;
       if (!snap.exists()) { setMessage("We couldn’t find that product."); return; }
       const data = snap.data();
@@ -57,7 +58,7 @@ export function ProductRedirect({ productId }: { productId: string }) {
       }
 
       if (data.redirectType === "internal") {
-        const profile = creatorId ? await getDoc(doc(db, "creatorProfiles", creatorId)) : null;
+        const profile = creatorId ? await getDoc(doc(firestore, "creatorProfiles", creatorId)) : null;
         const socialLinks = profile?.exists() ? profile.data().socialLinks ?? {} : {};
         const rawWhatsApp = typeof socialLinks.whatsapp === "string" ? socialLinks.whatsapp : "";
         const digits = rawWhatsApp.replace(/\D/g, "");
