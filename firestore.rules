@@ -103,8 +103,11 @@ service cloud.firestore {
         && validProfile(request.resource.data);
       allow update: if isOwner(uid)
         && request.resource.data.uid == resource.data.uid
-        && request.resource.data.username == resource.data.username
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["displayName", "bio", "photoURL", "category", "socialLinks", "theme", "published", "updatedAt"])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["username", "displayName", "bio", "photoURL", "category", "socialLinks", "theme", "published", "updatedAt"])
+        && (request.resource.data.username == resource.data.username
+          || (existsAfter(/databases/$(database)/documents/usernames/$(request.resource.data.username))
+            && getAfter(/databases/$(database)/documents/usernames/$(request.resource.data.username)).data.uid == request.auth.uid
+            && getAfter(/databases/$(database)/documents/usernames/$(request.resource.data.username)).data.username == request.resource.data.username))
         && validProfile(request.resource.data)
         // System-owned activity and suspension metadata cannot be forged or removed.
         && request.resource.data.get("suspendedAt", null) == resource.data.get("suspendedAt", null)
@@ -122,6 +125,20 @@ service cloud.firestore {
         && username.matches("^[a-z0-9][a-z0-9_-]{1,28}[a-z0-9]$")
         && existsAfter(/databases/$(database)/documents/creatorProfiles/$(request.auth.uid))
         && getAfter(/databases/$(database)/documents/creatorProfiles/$(request.auth.uid)).data.username == username;
+      allow list, update, delete: if false;
+    }
+
+    match /usernameRedirects/{username} {
+      // Only a redirect target is public; active username reservations stay private.
+      allow get: if true;
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(["redirectTo", "createdAt"])
+        && request.resource.data.redirectTo is string
+        && request.resource.data.redirectTo.matches("^[a-z0-9][a-z0-9_-]{1,28}[a-z0-9]$")
+        && exists(/databases/$(database)/documents/usernames/$(username))
+        && get(/databases/$(database)/documents/usernames/$(username)).data.uid == request.auth.uid
+        && existsAfter(/databases/$(database)/documents/creatorProfiles/$(request.auth.uid))
+        && getAfter(/databases/$(database)/documents/creatorProfiles/$(request.auth.uid)).data.username == request.resource.data.redirectTo;
       allow list, update, delete: if false;
     }
 
