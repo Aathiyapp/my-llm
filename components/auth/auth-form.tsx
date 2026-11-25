@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { User } from "firebase/auth";
-import { signInWithEmail, signInWithGoogle, signUpWithEmail } from "@/lib/firebase/auth";
+import { resetPassword, signInWithEmail, signInWithGoogle, signUpWithEmail } from "@/lib/firebase/auth";
 import { firebaseConfigured } from "@/lib/firebase/client";
 import { getCreatorRepository } from "@/lib/repositories";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState("");
   const isSignup = mode === "signup";
 
   async function continueToWorkspace(user: User) {
@@ -31,6 +32,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+    setNotice("");
     setBusy(true);
     const data = new FormData(event.currentTarget);
     try {
@@ -42,8 +44,23 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
         await continueToWorkspace(credential.user);
       }
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Something went wrong. Please try again.");
+      const code = (caught as {code?: string})?.code;
+      setError(code === "auth/email-already-in-use"
+        ? "This email already has an account. Sign in instead, or reset your password."
+        : code === "auth/weak-password"
+          ? "Choose a stronger password with at least 6 characters."
+          : code === "auth/invalid-credential" || code === "auth/wrong-password" || code === "auth/user-not-found"
+            ? "Email or password is incorrect. You can reset your password below."
+            : caught instanceof Error ? caught.message : "Something went wrong. Please try again.");
     } finally { setBusy(false); }
+  }
+
+  async function forgotPassword() {
+    const email = String(new FormData(document.querySelector("form") as HTMLFormElement).get("email") ?? "");
+    setError(""); setNotice(""); setBusy(true);
+    try { await resetPassword(email); setNotice("Password reset email sent. Check your inbox and spam folder."); }
+    catch (caught) { setError(caught instanceof Error ? caught.message : "Could not send a reset email."); }
+    finally { setBusy(false); }
   }
 
   async function google() {
@@ -66,6 +83,8 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
       <label className="field-label">Email address<input className="field-input" type="email" name="email" autoComplete="email" required /></label>
       <label className="field-label">Password<input className="field-input" type="password" name="password" autoComplete={isSignup ? "new-password" : "current-password"} minLength={6} required /></label>
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
+      {notice && <p role="status" className="text-sm text-green-800">{notice}</p>}
+      {!isSignup && <button type="button" onClick={() => void forgotPassword()} disabled={!firebaseConfigured || busy} className="text-sm font-semibold text-[#7133a1] underline disabled:opacity-50">Forgot password?</button>}
       <Button type="submit" className="w-full" disabled={!firebaseConfigured || busy}>{busy ? "Please wait…" : isSignup ? "Create your account" : "Sign in"}</Button>
     </form>
   </div>;

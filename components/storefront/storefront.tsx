@@ -24,6 +24,7 @@ export function Storefront({ username }: { username: string }) {
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [collections, setCollections] = useState<StoreCollection[]>([]);
   const [notice, setNotice] = useState("");
+  const [loadError, setLoadError] = useState("");
   const [loadState, setLoadState] = useState<{ username: string; status: "loading" | "loaded" | "failed" }>({ username: "", status: "loading" });
   const loading = loadState.username !== username || loadState.status === "loading";
   const loadFailed = loadState.username === username && loadState.status === "failed";
@@ -56,6 +57,14 @@ export function Storefront({ username }: { username: string }) {
         }
       } catch (error) {
         console.error("Failed to load public storefront:", error);
+        const code = (error as {code?: string})?.code ?? "";
+        setLoadError(code === "permission-denied"
+          ? "Public Firestore access was denied. Deploy the current firestore.rules to the Firebase project used by this site."
+          : code === "failed-precondition"
+            ? "A Firestore index required by this store is missing. Check Firebase Console → Firestore → Indexes."
+            : code === "unavailable" || code === "deadline-exceeded"
+              ? "Firebase is temporarily unavailable. Check the project status and try again."
+              : error instanceof Error ? `${error.message}${code ? ` (${code})` : ""}` : "The store data could not be fetched. Check the browser console for the Firebase error.");
         failed = true;
       } finally {
         if (!cancelled) {
@@ -113,6 +122,7 @@ export function Storefront({ username }: { username: string }) {
         <p className="text-xs font-semibold uppercase tracking-[.18em] text-[#71816f]">{loadFailed ? "Store unavailable" : "Store not found"}</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[#26251f]">{loadFailed ? "We couldn’t load this store." : "This store isn’t available yet."}</h1>
         <p className="mt-3 text-sm leading-6 text-[#7d7460]">{loadFailed ? "Please refresh and try again." : "Check the link or create your own store."}</p>
+        {loadFailed && loadError && <p role="alert" className="mx-auto mt-3 max-w-lg text-xs leading-5 text-[#8a6258]">{loadError}</p>}
         {loadFailed ? <button onClick={() => window.location.reload()} className="mt-6 rounded-full bg-[#315c4c] px-5 py-3 text-sm font-semibold text-white">Try again</button> : <Link href="/onboarding" className="mt-6 inline-flex rounded-full bg-[#315c4c] px-5 py-3 text-sm font-semibold text-white">Create your store</Link>}
       </section>
     </main>

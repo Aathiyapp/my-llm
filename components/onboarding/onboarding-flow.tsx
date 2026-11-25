@@ -125,7 +125,7 @@ export function OnboardingFlow() {
         const available = await getCreatorRepository().isUsernameAvailable(username, user.uid);
         if (!available) { setError("That username is already in use. Try another."); return; }
         patch({ username });
-      } catch (caught) { setError(caught instanceof Error ? caught.message : "Could not check that username."); return; }
+      } catch (caught) { setError(onboardingError(caught, "Could not check that username.")); return; }
       finally { setChecking(false); }
     }
     if (step === 2) {
@@ -149,7 +149,7 @@ export function OnboardingFlow() {
       if (draftStorageKey) localStorage.removeItem(draftStorageKey);
       router.replace("/dashboard");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "We couldn't create your store. Please try again.");
+      setError(onboardingError(caught, "We couldn't create your store. Please try again."));
     } finally { setSaving(false); }
   }
 
@@ -167,4 +167,16 @@ export function OnboardingFlow() {
       {error && <div role="alert" className="mt-5 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700"><p>{error}</p>{verificationFailed && <button type="button" onClick={() => setVerificationAttempt((value) => value + 1)} className="mt-2 font-semibold underline">Retry account check</button>}</div>}
       <div className="mt-8 flex items-center justify-between border-t border-[#edf0eb] pt-5"><Button variant="ghost" disabled={step===0 || saving} onClick={()=>setStep((value)=>Math.max(0,value-1))}><ArrowLeft size={15}/> Back</Button>{step<3 ? <Button onClick={()=>void next()} disabled={checking}>{checking ? "Checking…" : <>Continue <ArrowRight size={15}/></>}</Button> : <Button onClick={()=>void publishStore()} disabled={saving||!acceptedTerms}>{saving ? "Creating your draft…" : <>Create store draft <Check size={15}/></>}</Button>}</div>
     </section></div></div></main>;
+}
+
+function onboardingError(caught: unknown, fallback: string) {
+  const code = (caught as {code?: string})?.code ?? "";
+  const message = caught instanceof Error ? caught.message : "";
+  if (code === "permission-denied" || /missing or insufficient permissions/i.test(message)) {
+    return "Firebase blocked this setup because the deployed Firestore rules do not match this app. Ask the project administrator to deploy the current firestore.rules, then retry. Your entered details are saved in this browser.";
+  }
+  if (code === "unavailable" || code === "deadline-exceeded") {
+    return "Firebase is temporarily unavailable. Check your connection and try again.";
+  }
+  return message || fallback;
 }

@@ -6,6 +6,7 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signInWithPopup,
+  sendPasswordResetEmail,
   signOut,
   updateProfile,
   type User,
@@ -23,6 +24,11 @@ export async function signInWithGoogle() {
 
 export async function signInWithEmail(email: string, password: string) {
   return signInWithEmailAndPassword(requireAuth(), email, password);
+}
+
+export async function resetPassword(email: string) {
+  if (!email.trim()) throw new Error("Enter your email address first.");
+  await sendPasswordResetEmail(requireAuth(), email.trim());
 }
 
 export async function signUpWithEmail(email: string, password: string, displayName: string) {
