@@ -1,11 +1,11 @@
 # Restore administrator access
 
-The `/admin` screen's 403 means the signed-in Firebase Auth UID is not the UID in the `BUBBLI_SUPER_ADMIN_UID` Functions secret. This is an authorization configuration problem; the client cannot safely grant itself access.
+Initial admin access is restricted to one verified Firebase Auth UID in the `BUBBLI_SUPER_ADMIN_UID` Functions secret. The client cannot grant itself access.
 
 ## Initial Super Admin
 
-1. In Firebase Console → Authentication → Users, identify the intended administrator account and copy its UID. Confirm the Firebase project is `affiliate-93078` (the project selected by this repository's `.firebaserc`).
-2. From this repository, set the Functions secret to that UID:
+1. Confirm the Firebase project is `affiliate-93078` (the project selected by this repository's `.firebaserc`).
+2. From this repository, set the Functions secret to the intended administrator's UID:
 
    ```powershell
    firebase functions:secrets:set BUBBLI_SUPER_ADMIN_UID --project affiliate-93078
@@ -18,7 +18,7 @@ The `/admin` screen's 403 means the signed-in Firebase Auth UID is not the UID i
    firebase deploy --only functions:claimInitialSuperAdmin --project affiliate-93078
    ```
 
-4. Sign in as that exact account, visit `/admin`, and choose **Provision initial Super Admin**. The callable verifies the UID server-side, creates a one-time bootstrap record, and sets the Auth custom claim.
+4. Sign in to that exact Firebase Auth account, verify its email, visit `/admin`, and choose **Provision initial Super Admin**. The callable verifies the UID and email verification server-side, creates a one-time bootstrap record, and sets the Auth custom claim.
 
 If the callable reports that a Super Admin is already provisioned, sign in as that existing administrator and grant the intended account the `admin` role from the Users tab. If no existing admin can sign in, use a trusted Admin SDK environment with the project's service account to set the custom claim after verifying the operator's identity; never add a public client-side role switch or open admin reads in Firestore rules.
 

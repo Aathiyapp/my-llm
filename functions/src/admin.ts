@@ -419,43 +419,102 @@ export const claimInitialSuperAdmin = onCall(
         "Sign in with the provisioned administrator account.",
       );
     }
+    const actorUid = request.auth.uid;
+    if (request.auth.token.email_verified !== true) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Verify this account's email before initial admin provisioning.",
+      );
+    }
     const allowedUid = bootstrapUid.value().trim();
-    if (!allowedUid || request.auth.uid !== allowedUid) {
+    if (!allowedUid || actorUid !== allowedUid) {
       throw new HttpsError(
         "permission-denied",
         "This account is not configured for initial admin provisioning.",
       );
     }
+    const provisionedUser = await getAuth().getUser(actorUid);
+    if (!provisionedUser.emailVerified) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Verify this account's email before initial admin provisioning.",
+      );
+    }
+    if (provisionedUser.disabled) {
+      throw new HttpsError(
+        "permission-denied",
+        "This account is disabled and cannot be provisioned as Super Admin.",
+      );
+    }
+    let pageToken: string | undefined;
+    do {
+      const page = await getAuth().listUsers(1000, pageToken);
+      const existingSuperAdmin = page.users.find((user) =>
+        user.uid !== actorUid &&
+        user.customClaims?.platformRole === "super_admin",
+      );
+      if (existingSuperAdmin) {
+        throw new HttpsError(
+          "already-exists",
+          "An existing Super Admin account is present. Use it to manage roles.",
+        );
+      }
+      pageToken = page.pageToken;
+    } while (pageToken);
     const bootstrapRef = db.collection("adminSystem").doc("bootstrap");
     await db.runTransaction(async (transaction) => {
       const bootstrap = await transaction.get(bootstrapRef);
       const claimedBy = bootstrap.data()?.claimedBy;
-      if (claimedBy && claimedBy !== request.auth?.uid) {
+      if (bootstrap.exists && claimedBy !== actorUid) {
         throw new HttpsError(
           "already-exists",
           "A Super Admin is already provisioned.",
         );
       }
-      if (!claimedBy) {
+      if (!bootstrap.exists) {
         transaction.create(bootstrapRef, {
-          claimedBy: request.auth?.uid,
+          claimedBy: actorUid,
           createdAt: FieldValue.serverTimestamp(),
         });
       }
     });
-    const user = await getAuth().getUser(request.auth.uid);
-    const claims = {...user.customClaims, platformRole: "super_admin"};
-    await getAuth().setCustomUserClaims(request.auth.uid, claims);
-    await bootstrapRef.set(
-      {completedAt: FieldValue.serverTimestamp()},
-      {merge: true},
-    );
-    await writeAudit(
-      request.auth.uid,
-      "super_admin",
-      "admin.bootstrap",
-      request.auth.uid,
-    );
+    const claims = {
+      ...provisionedUser.customClaims,
+      platformRole: "super_admin",
+    };
+    await getAuth().setCustomUserClaims(actorUid, claims);
+    const auditRef = db.collection("adminAuditLogs")
+      .doc(`admin.bootstrap-${actorUid}`);
+    await db.runTransaction(async (transaction) => {
+      const [bootstrap, audit] = await Promise.all([
+        transaction.get(bootstrapRef),
+        transaction.get(auditRef),
+      ]);
+      if (
+        !bootstrap.exists ||
+        bootstrap.get("claimedBy") !== actorUid
+      ) {
+        throw new HttpsError(
+          "failed-precondition",
+          "The initial administrator reservation could not be verified.",
+        );
+      }
+      if (!bootstrap.get("completedAt")) {
+        transaction.update(bootstrapRef, {
+          completedAt: FieldValue.serverTimestamp(),
+        });
+      }
+      if (!audit.exists) {
+        transaction.create(auditRef, {
+          actorUid,
+          actorRole: "super_admin",
+          action: "admin.bootstrap",
+          target: actorUid,
+          details: {},
+          createdAt: FieldValue.serverTimestamp(),
+        });
+      }
+    });
     return {role: "super_admin"};
   },
 );
@@ -927,10 +986,10 @@ export const adminConsole = onCall({region: "asia-south1"}, async (request) => {
     }
     const uid = stringField(data, "uid");
     const nextRole = data.role === null ? null : roleOf(data.role);
-    if (data.role !== null && !nextRole) {
+    if (data.role !== null && (!nextRole || nextRole === "super_admin")) {
       throw new HttpsError(
         "invalid-argument",
-        "Select a valid administrator role.",
+        "Super Admin is assigned only by the one-time bootstrap process.",
       );
     }
     if (uid === request.auth.uid) {
